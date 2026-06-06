@@ -15,13 +15,15 @@ export default function CaloriesRing() {
   const overLimit = consumed > target;
 
   return (
-    <div className="card-surface flex flex-1 flex-col p-4">
+    <div className="glass-card flex flex-1 flex-col p-4">
       <div className="mb-2 flex items-center gap-2">
-        <Flame size={16} className="text-orange-400" />
-        <span className="font-display text-xs font-semibold">Kalórie</span>
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-500/15">
+          <Flame size={15} className="text-orange-400" />
+        </div>
+        <span className="font-display text-xs font-semibold text-white/70">Kalórie</span>
       </div>
-      <p className="font-display text-xl font-bold">{consumed}</p>
-      <p className="mb-2 text-[10px] text-text-muted">kcal</p>
+      <p className="font-display text-2xl font-bold">{consumed}</p>
+      <p className="mb-2 text-[10px] text-white/35">kcal</p>
       <div className="mt-auto flex justify-end">
         <RingProgress
           progress={Math.min(progress, 1)}

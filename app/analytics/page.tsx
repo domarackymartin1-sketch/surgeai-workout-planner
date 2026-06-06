@@ -33,7 +33,8 @@ export default function AnalyticsPage() {
   };
 
   return (
-    <main className="page-container min-h-dvh bg-bg-primary">
+    <div className="gradient-mesh min-h-dvh">
+    <main className="page-container">
       <PageTransition>
         <h1 className="mb-6 font-display text-2xl font-bold">Analytics</h1>
 
@@ -98,5 +99,6 @@ export default function AnalyticsPage() {
         </section>
       </PageTransition>
     </main>
+    </div>
   );
 }

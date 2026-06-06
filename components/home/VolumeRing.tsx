@@ -19,15 +19,17 @@ export default function VolumeRing() {
   const progress = Math.min(todayVolume / 5000, 1);
 
   return (
-    <div className="card-surface flex flex-1 flex-col p-4">
+    <div className="glass-card flex flex-1 flex-col p-4">
       <div className="mb-2 flex items-center gap-2">
-        <Dumbbell size={16} className="text-accent-green" />
-        <span className="font-display text-xs font-semibold">Objem</span>
+        <div className="glass-pill-active flex h-8 w-8 items-center justify-center rounded-lg">
+          <Dumbbell size={15} className="text-accent-green" />
+        </div>
+        <span className="font-display text-xs font-semibold text-white/70">Objem</span>
       </div>
-      <p className="font-display text-xl font-bold">
+      <p className="font-display text-2xl font-bold">
         {todayVolume > 0 ? `${Math.round(todayVolume)}` : '0'}
       </p>
-      <p className="mb-1 text-[10px] text-text-muted">kg</p>
+      <p className="mb-1 text-[10px] text-white/35">kg</p>
       <div className="flex items-center gap-1 text-[10px]">
         {change >= 0 ? (
           <TrendingUp size={10} className="text-accent-green" />

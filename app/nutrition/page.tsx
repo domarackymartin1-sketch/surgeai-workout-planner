@@ -50,7 +50,8 @@ export default function NutritionPage() {
   };
 
   return (
-    <main className="page-container min-h-dvh bg-bg-primary">
+    <div className="gradient-mesh min-h-dvh">
+    <main className="page-container">
       <PageTransition>
         <h1 className="mb-6 font-display text-2xl font-bold">Nutrition</h1>
 
@@ -147,5 +148,6 @@ export default function NutritionPage() {
         </section>
       </PageTransition>
     </main>
+    </div>
   );
 }

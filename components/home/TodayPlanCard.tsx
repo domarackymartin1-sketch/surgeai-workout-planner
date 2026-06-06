@@ -20,32 +20,34 @@ export default function TodayPlanCard() {
   };
 
   return (
-    <div className="relative overflow-hidden rounded-card bg-bg-card p-5" style={{ minHeight: 180 }}>
+    <div className="glass-card relative overflow-hidden p-5" style={{ minHeight: 200 }}>
       <div
-        className="pointer-events-none absolute -left-8 -top-8 h-32 w-32 rounded-full opacity-20"
-        style={{ background: 'radial-gradient(circle, var(--accent-green), transparent)' }}
+        className="pointer-events-none absolute -right-12 -top-12 h-48 w-48 rounded-full"
+        style={{ background: 'radial-gradient(circle, rgba(0,255,102,0.15), transparent 70%)' }}
+      />
+      <div
+        className="pointer-events-none absolute -bottom-8 -left-8 h-32 w-32 rounded-full"
+        style={{ background: 'radial-gradient(circle, rgba(0,255,102,0.08), transparent 70%)' }}
       />
       <h3 className="relative mb-2 font-display text-xl font-bold leading-tight">
         {plan.name}
       </h3>
-      <p className="relative mb-3 text-sm text-text-muted">
+      <p className="relative mb-4 text-sm text-white/40">
         {plan.exercises.length} cvikov · {formatDuration(plan.estimatedMinutes)}
       </p>
-      <div className="relative mb-4 flex flex-wrap gap-2">
+      <div className="relative mb-5 flex flex-wrap gap-2">
         {plan.muscleGroups.map((mg) => (
           <span
             key={mg}
-            className="rounded-full border border-accent-green/30 bg-accent-green/10 px-2.5 py-0.5 text-xs text-accent-green"
+            className="rounded-full border border-accent-green/20 bg-accent-green/10 px-3 py-1 text-xs font-medium text-accent-green"
           >
             {mg}
           </span>
         ))}
       </div>
-      <GreenButton fullWidth onClick={handleStart}>
-        <span className="flex items-center justify-center gap-2">
-          <Zap size={18} />
-          ŠTART TRÉNINGU
-        </span>
+      <GreenButton fullWidth pill onClick={handleStart}>
+        <Zap size={18} />
+        ŠTART TRÉNINGU
       </GreenButton>
     </div>
   );

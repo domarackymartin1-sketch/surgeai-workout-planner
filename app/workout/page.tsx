@@ -49,11 +49,12 @@ export default function WorkoutPage() {
   ];
 
   return (
-    <main className="page-container min-h-dvh bg-bg-primary">
+    <div className="gradient-mesh min-h-dvh">
+    <main className="page-container">
       <PageTransition>
         <h1 className="mb-6 font-display text-2xl font-bold">Workout</h1>
 
-        <div className="mb-6 flex gap-1 rounded-card bg-bg-card p-1">
+        <div className="glass-card mb-6 flex gap-1 p-1">
           {tabs.map((t) => (
             <button
               key={t.id}
@@ -194,7 +195,7 @@ export default function WorkoutPage() {
         <button
           type="button"
           onClick={() => setShowModal(true)}
-          className="fixed bottom-24 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-accent-green text-black shadow-lg neon-glow"
+          className="neon-glow fixed bottom-28 right-5 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-accent-green text-black shadow-lg"
           aria-label="Nový plán"
         >
           <Plus size={24} />
@@ -229,5 +230,6 @@ export default function WorkoutPage() {
         </div>
       )}
     </main>
+    </div>
   );
 }

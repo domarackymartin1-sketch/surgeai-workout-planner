@@ -1,8 +1,10 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Home, Dumbbell, Apple, BarChart3 } from 'lucide-react';
+import { useStore } from '@/lib/store';
 
 const NAV_ITEMS = [
   { href: '/', label: 'Home', icon: Home },
@@ -13,27 +15,43 @@ const NAV_ITEMS = [
 
 export default function BottomNav() {
   const pathname = usePathname();
+  const profile = useStore((s) => s.profile);
+  const [hydrated, setHydrated] = useState(false);
 
+  useEffect(() => {
+    setHydrated(true);
+  }, []);
+
+  if (!hydrated) return null;
+  if (!profile?.onboardingComplete) return null;
   if (pathname.startsWith('/workout/') && pathname !== '/workout') return null;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-[#1E1E1E] bg-[#0A0A0A] safe-bottom">
-      <div className="mx-auto flex h-16 max-w-lg items-center justify-around px-2">
+    <nav className="pointer-events-none fixed bottom-0 left-0 right-0 z-50 flex justify-center px-4 pb-[max(12px,env(safe-area-inset-bottom))]">
+      <div className="glass-nav pointer-events-auto flex h-[68px] w-full max-w-sm items-center justify-around rounded-[28px] px-2">
         {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
           const active = href === '/' ? pathname === '/' : pathname.startsWith(href);
           return (
             <Link
               key={href}
               href={href}
-              className="touch-manipulation flex min-h-[44px] min-w-[44px] flex-col items-center justify-center gap-0.5"
+              className="touch-manipulation flex min-h-[52px] min-w-[52px] flex-col items-center justify-center gap-0.5 rounded-2xl transition-all duration-200"
             >
-              <Icon
-                size={22}
-                className={active ? 'text-accent-green' : 'text-text-muted'}
-                strokeWidth={active ? 2.5 : 1.5}
-              />
+              <div
+                className={`flex h-10 w-10 items-center justify-center rounded-xl transition-all duration-200 ${
+                  active ? 'glass-pill-active' : ''
+                }`}
+              >
+                <Icon
+                  size={20}
+                  className={active ? 'text-accent-green' : 'text-white/45'}
+                  strokeWidth={active ? 2.5 : 1.5}
+                />
+              </div>
               <span
-                className={`text-[10px] font-medium ${active ? 'text-accent-green' : 'text-text-muted'}`}
+                className={`text-[9px] font-semibold tracking-wide ${
+                  active ? 'text-accent-green' : 'text-white/40'
+                }`}
               >
                 {label}
               </span>

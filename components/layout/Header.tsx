@@ -11,22 +11,22 @@ export default function Header({ name }: HeaderProps) {
   return (
     <header className="mb-6 flex items-center justify-between">
       <div className="flex items-center gap-3">
-        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-bg-card font-display text-lg font-bold text-accent-green">
+        <div className="glass-card flex h-12 w-12 items-center justify-center font-display text-lg font-bold text-accent-green">
           {getInitials(name)}
         </div>
         <div>
-          <p className="font-display text-lg font-semibold leading-tight">
+          <p className="font-display text-xl font-semibold leading-tight">
             Ahoj, {name}
           </p>
-          <p className="text-sm text-text-muted">Vitaj späť!</p>
+          <p className="text-sm text-white/45">Vitaj späť!</p>
         </div>
       </div>
       <button
         type="button"
-        className="touch-manipulation flex h-11 w-11 items-center justify-center rounded-full text-text-muted"
+        className="glass touch-manipulation flex h-12 w-12 items-center justify-center rounded-2xl text-white/50"
         aria-label="Notifikácie"
       >
-        <Bell size={22} />
+        <Bell size={20} />
       </button>
     </header>
   );

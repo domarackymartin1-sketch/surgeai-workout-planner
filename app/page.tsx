@@ -28,25 +28,31 @@ export default function HomePage() {
   }
 
   return (
-    <main className="page-container min-h-dvh bg-bg-primary">
-      <PageTransition>
-        <Header name={profile.name} />
-        <CalendarStrip />
+    <div className="gradient-mesh min-h-dvh">
+      <main className="page-container">
+        <PageTransition>
+          <Header name={profile.name} />
+          <CalendarStrip />
 
-        <section className="mb-6">
-          <h2 className="mb-4 font-display text-lg font-bold">Dnešný prehľad</h2>
-          <StepsCard />
-          <div className="flex gap-3">
-            <CaloriesRing />
-            <VolumeRing />
-          </div>
-        </section>
+          <section className="mb-6">
+            <h2 className="mb-4 font-display text-lg font-bold tracking-wide text-white/90">
+              Dnešný prehľad
+            </h2>
+            <StepsCard />
+            <div className="flex gap-3">
+              <CaloriesRing />
+              <VolumeRing />
+            </div>
+          </section>
 
-        <section>
-          <h2 className="mb-4 font-display text-lg font-bold">Tvoj Tréningový Plán</h2>
-          <TodayPlanCard />
-        </section>
-      </PageTransition>
-    </main>
+          <section>
+            <h2 className="mb-4 font-display text-lg font-bold tracking-wide text-white/90">
+              Tvoj Tréningový Plán
+            </h2>
+            <TodayPlanCard />
+          </section>
+        </PageTransition>
+      </main>
+    </div>
   );
 }
