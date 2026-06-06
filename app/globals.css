@@ -1,0 +1,95 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-primary: #000000;
+  --bg-surface: #121212;
+  --bg-card: #1a1a1a;
+  --accent-green: #00ff66;
+  --accent-dim: #00cc52;
+  --accent-olive: #2a3d2e;
+  --danger: #ff3b3b;
+  --text-primary: #ffffff;
+  --text-muted: #6b6b6b;
+  --text-dim: #3a3a3a;
+  --radius-card: 16px;
+  --radius-btn: 12px;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-dm-sans), sans-serif;
+  overflow-x: hidden;
+  min-height: 100dvh;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-barlow), sans-serif;
+}
+
+@layer utilities {
+  .touch-manipulation {
+    touch-action: manipulation;
+  }
+
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .page-container {
+    @apply mx-auto max-w-lg px-4 pb-24 pt-4;
+  }
+
+  .neon-glow {
+    box-shadow: 0 0 20px rgba(0, 255, 102, 0.3);
+  }
+
+  .card-surface {
+    background-color: var(--bg-card);
+    border-radius: var(--radius-card);
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(0, 255, 102, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(0, 255, 102, 0.5);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes ring-fill {
+  from {
+    stroke-dashoffset: 283;
+  }
+}
+
+.ring-animate {
+  animation: ring-fill 1s ease-out forwards;
+}
+
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type='number'] {
+  -moz-appearance: textfield;
+}
