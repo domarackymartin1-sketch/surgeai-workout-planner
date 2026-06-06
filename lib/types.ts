@@ -1,4 +1,8 @@
 export type UserGoal = 'muscle' | 'loss' | 'maintain' | 'strength';
+export type ExperienceLevel = 'beginner' | 'intermediate' | 'advanced';
+export type WorkoutFrequency = '2-3' | '4-5' | '6+';
+export type WorkoutCategory = 'hybrid' | 'gym' | 'cardio' | 'recovery' | 'hiit' | 'yoga';
+export type HabitId = 'water' | 'sleep' | 'stretching' | 'steps' | 'meditation' | 'protein';
 
 export interface Exercise {
   id: string;
@@ -73,9 +77,26 @@ export interface UserProfile {
   name: string;
   goal: UserGoal;
   dailyKcalTarget: number;
+  experienceLevel: ExperienceLevel;
+  workoutFrequency: WorkoutFrequency;
+  categories: WorkoutCategory[];
+  heightCm: number;
+  weightKg: number;
+  bmi: number;
+  habits: HabitId[];
   weight: WeightEntry[];
   bodyMeasurements: BodyMeasurement[];
   onboardingComplete: boolean;
+}
+
+export interface HabitLog {
+  date: string;
+  completed: HabitId[];
+}
+
+export interface WeeklyDayPlan {
+  dayIndex: number;
+  category: WorkoutCategory;
 }
 
 export interface PR {
@@ -100,4 +121,16 @@ export interface ActiveWorkout {
   currentExerciseIndex: number;
   sets: SetLog[];
   restSeconds: number;
+}
+
+export interface OnboardingData {
+  name: string;
+  goal: UserGoal;
+  experienceLevel: ExperienceLevel;
+  workoutFrequency: WorkoutFrequency;
+  categories: WorkoutCategory[];
+  heightCm: number;
+  weightKg: number;
+  habits: HabitId[];
+  dailyKcalTarget: number;
 }

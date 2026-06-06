@@ -15,6 +15,8 @@ const config: Config = {
         'accent-green': 'var(--accent-green)',
         'accent-dim': 'var(--accent-dim)',
         'accent-olive': 'var(--accent-olive)',
+        'accent-blue': 'var(--accent-blue)',
+        'accent-purple': 'var(--accent-purple)',
         danger: 'var(--danger)',
         'text-primary': 'var(--text-primary)',
         'text-muted': 'var(--text-muted)',

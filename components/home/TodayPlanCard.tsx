@@ -20,26 +20,20 @@ export default function TodayPlanCard() {
   };
 
   return (
-    <div className="glass-card relative overflow-hidden p-5" style={{ minHeight: 200 }}>
+    <div className="glass-card relative overflow-hidden p-5">
       <div
         className="pointer-events-none absolute -right-12 -top-12 h-48 w-48 rounded-full"
-        style={{ background: 'radial-gradient(circle, rgba(0,255,102,0.15), transparent 70%)' }}
+        style={{ background: 'radial-gradient(circle, rgba(0,255,102,0.12), transparent 70%)' }}
       />
-      <div
-        className="pointer-events-none absolute -bottom-8 -left-8 h-32 w-32 rounded-full"
-        style={{ background: 'radial-gradient(circle, rgba(0,255,102,0.08), transparent 70%)' }}
-      />
-      <h3 className="relative mb-2 font-display text-xl font-bold leading-tight">
-        {plan.name}
-      </h3>
+      <h3 className="relative mb-1 font-display text-lg font-bold leading-tight">{plan.name}</h3>
       <p className="relative mb-4 text-sm text-white/40">
         {plan.exercises.length} cvikov · {formatDuration(plan.estimatedMinutes)}
       </p>
-      <div className="relative mb-5 flex flex-wrap gap-2">
+      <div className="relative mb-4 flex flex-wrap gap-2">
         {plan.muscleGroups.map((mg) => (
           <span
             key={mg}
-            className="rounded-full border border-accent-green/20 bg-accent-green/10 px-3 py-1 text-xs font-medium text-accent-green"
+            className="rounded-full border border-accent-green/20 bg-accent-green/10 px-2.5 py-0.5 text-xs text-accent-green"
           >
             {mg}
           </span>

@@ -1,12 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Header from '@/components/layout/Header';
 import PageTransition from '@/components/layout/PageTransition';
-import CalendarStrip from '@/components/home/CalendarStrip';
-import StepsCard from '@/components/home/StepsCard';
-import CaloriesRing from '@/components/home/CaloriesRing';
-import VolumeRing from '@/components/home/VolumeRing';
+import DashboardTopBar from '@/components/home/DashboardTopBar';
+import WeekCalendar from '@/components/home/WeekCalendar';
+import WorkoutWeekPlan from '@/components/home/WorkoutWeekPlan';
+import WeeklyOverview from '@/components/home/WeeklyOverview';
+import HabitTracker from '@/components/home/HabitTracker';
+import BMICard from '@/components/home/BMICard';
 import TodayPlanCard from '@/components/home/TodayPlanCard';
 import Onboarding from '@/components/onboarding/Onboarding';
 import { useStore } from '@/lib/store';
@@ -20,7 +21,7 @@ export default function HomePage() {
   }, []);
 
   if (!hydrated) {
-    return <div className="min-h-dvh bg-bg-primary" />;
+    return <div className="min-h-dvh min-h-svh bg-black" />;
   }
 
   if (!profile?.onboardingComplete) {
@@ -28,26 +29,19 @@ export default function HomePage() {
   }
 
   return (
-    <div className="gradient-mesh min-h-dvh">
+    <div className="gradient-mesh min-h-dvh min-h-svh">
       <main className="page-container">
         <PageTransition>
-          <Header name={profile.name} />
-          <CalendarStrip />
+          <DashboardTopBar />
+          <WeekCalendar />
+          <WorkoutWeekPlan />
+          <WeeklyOverview />
+          <HabitTracker />
+          <BMICard />
 
           <section className="mb-6">
-            <h2 className="mb-4 font-display text-lg font-bold tracking-wide text-white/90">
-              Dnešný prehľad
-            </h2>
-            <StepsCard />
-            <div className="flex gap-3">
-              <CaloriesRing />
-              <VolumeRing />
-            </div>
-          </section>
-
-          <section>
-            <h2 className="mb-4 font-display text-lg font-bold tracking-wide text-white/90">
-              Tvoj Tréningový Plán
+            <h2 className="mb-3 font-display text-base font-bold text-white/90">
+              Dnešný tréning
             </h2>
             <TodayPlanCard />
           </section>

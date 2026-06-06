@@ -5,17 +5,21 @@ import { persist } from 'zustand/middleware';
 import type {
   ActiveWorkout,
   FoodItem,
+  HabitId,
+  HabitLog,
   NutritionLog,
+  OnboardingData,
   PR,
   SetLog,
   StepsData,
-  UserGoal,
   UserProfile,
+  WeeklyDayPlan,
+  WorkoutCategory,
   WorkoutLog,
   WorkoutPlan,
 } from './types';
 import { DEFAULT_PLANS, getExerciseById } from './exercises';
-import { calculateVolume, formatDateISO, generateId } from './utils';
+import { calculateBMI, calculateVolume, formatDateISO, generateId } from './utils';
 
 interface AppState {
   profile: UserProfile | null;
@@ -24,11 +28,15 @@ interface AppState {
   nutritionLogs: NutritionLog[];
   prs: PR[];
   stepsHistory: StepsData[];
+  habitLogs: HabitLog[];
+  weeklySchedule: WeeklyDayPlan[];
   activeWorkout: ActiveWorkout | null;
+  weekOffset: number;
 
-  setProfile: (profile: Partial<UserProfile> & { name: string; goal: UserGoal; dailyKcalTarget: number }) => void;
+  saveOnboarding: (data: OnboardingData) => void;
   completeOnboarding: () => void;
   resetOnboarding: () => void;
+  setWeekOffset: (offset: number) => void;
 
   addPlan: (plan: Omit<WorkoutPlan, 'id'>) => void;
   updatePlan: (id: string, plan: Partial<WorkoutPlan>) => void;
@@ -46,6 +54,9 @@ interface AppState {
 
   addWeight: (weight: number) => void;
   addBodyMeasurement: (measurement: { chest?: number; waist?: number; hips?: number; biceps?: number }) => void;
+
+  toggleHabit: (habitId: HabitId) => void;
+  getTodayHabits: () => HabitId[];
 
   getTodaySteps: () => StepsData;
   getStepsForWeek: () => StepsData[];
@@ -68,6 +79,15 @@ function initStepsHistory(): StepsData[] {
   return history;
 }
 
+function buildWeeklySchedule(categories: WorkoutCategory[]): WeeklyDayPlan[] {
+  const defaults: WorkoutCategory[] = ['hybrid', 'gym', 'cardio', 'recovery', 'gym', 'cardio', 'recovery'];
+  const primary = categories[0] ?? 'gym';
+  return defaults.map((cat, i) => ({
+    dayIndex: i,
+    category: categories.includes(cat) ? cat : i % 2 === 0 ? primary : cat,
+  }));
+}
+
 export const useStore = create<AppState>()(
   persist(
     (set, get) => ({
@@ -77,19 +97,32 @@ export const useStore = create<AppState>()(
       nutritionLogs: [],
       prs: [],
       stepsHistory: initStepsHistory(),
+      habitLogs: [],
+      weeklySchedule: buildWeeklySchedule(['gym', 'cardio', 'hybrid']),
       activeWorkout: null,
+      weekOffset: 0,
 
-      setProfile: (profile) =>
+      saveOnboarding: (data) => {
+        const bmi = calculateBMI(data.weightKg, data.heightCm);
         set({
           profile: {
-            name: profile.name,
-            goal: profile.goal,
-            dailyKcalTarget: profile.dailyKcalTarget,
-            weight: profile.weight ?? [],
-            bodyMeasurements: profile.bodyMeasurements ?? [],
+            name: data.name,
+            goal: data.goal,
+            dailyKcalTarget: data.dailyKcalTarget,
+            experienceLevel: data.experienceLevel,
+            workoutFrequency: data.workoutFrequency,
+            categories: data.categories,
+            heightCm: data.heightCm,
+            weightKg: data.weightKg,
+            bmi,
+            habits: data.habits,
+            weight: [{ date: formatDateISO(), weight: data.weightKg }],
+            bodyMeasurements: [],
             onboardingComplete: false,
           },
-        }),
+          weeklySchedule: buildWeeklySchedule(data.categories),
+        });
+      },
 
       completeOnboarding: () =>
         set((state) => ({
@@ -99,6 +132,8 @@ export const useStore = create<AppState>()(
         })),
 
       resetOnboarding: () => set({ profile: null }),
+
+      setWeekOffset: (offset) => set({ weekOffset: offset }),
 
       addPlan: (plan) =>
         set((state) => ({
@@ -188,8 +223,6 @@ export const useStore = create<AppState>()(
         exerciseMaxes.forEach((val, exerciseId) => {
           const existing = prs.find((p) => p.exerciseId === exerciseId);
           if (!existing || val.weight > existing.weight) {
-            const plan = plans.find((p) => p.id === activeWorkout.planId);
-            const exercise = plan?.exercises.find((e) => e.exerciseId === exerciseId);
             const idx = newPrs.findIndex((p) => p.exerciseId === exerciseId);
             const pr: PR = {
               exerciseId,
@@ -258,9 +291,12 @@ export const useStore = create<AppState>()(
           if (!state.profile) return state;
           const entry = { date: formatDateISO(), weight };
           const existing = state.profile.weight.filter((w) => w.date !== entry.date);
+          const bmi = calculateBMI(weight, state.profile.heightCm);
           return {
             profile: {
               ...state.profile,
+              weightKg: weight,
+              bmi,
               weight: [...existing, entry].sort((a, b) => a.date.localeCompare(b.date)),
             },
           };
@@ -278,6 +314,31 @@ export const useStore = create<AppState>()(
             },
           };
         }),
+
+      toggleHabit: (habitId) => {
+        const today = formatDateISO();
+        set((state) => {
+          const existing = state.habitLogs.find((l) => l.date === today);
+          if (existing) {
+            const completed = existing.completed.includes(habitId)
+              ? existing.completed.filter((h) => h !== habitId)
+              : [...existing.completed, habitId];
+            return {
+              habitLogs: state.habitLogs.map((l) =>
+                l.date === today ? { ...l, completed } : l
+              ),
+            };
+          }
+          return {
+            habitLogs: [...state.habitLogs, { date: today, completed: [habitId] }],
+          };
+        });
+      },
+
+      getTodayHabits: () => {
+        const today = formatDateISO();
+        return get().habitLogs.find((l) => l.date === today)?.completed ?? [];
+      },
 
       getTodaySteps: () => {
         const today = formatDateISO();
@@ -298,6 +359,16 @@ export const useStore = create<AppState>()(
         return days;
       },
     }),
-    { name: 'surgeai-store' }
+    {
+      name: 'surgeai-store',
+      version: 2,
+      migrate: (persisted: unknown) => {
+        const state = persisted as AppState;
+        if (state?.profile && !('experienceLevel' in state.profile)) {
+          state.profile = null;
+        }
+        return state;
+      },
+    }
   )
 );

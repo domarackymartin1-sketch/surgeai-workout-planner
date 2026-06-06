@@ -101,3 +101,57 @@ export const GOAL_LABELS: Record<string, string> = {
 };
 
 export const MOOD_EMOJIS = ['😤', '💪', '🔥', '😊', '😴'];
+
+export function calculateBMI(weightKg: number, heightCm: number): number {
+  if (!heightCm || !weightKg) return 0;
+  const heightM = heightCm / 100;
+  return +(weightKg / (heightM * heightM)).toFixed(1);
+}
+
+export function getBMICategory(bmi: number): { label: string; color: string } {
+  if (bmi < 18.5) return { label: 'Podváha', color: 'var(--accent-green)' };
+  if (bmi < 25) return { label: 'Normálna', color: 'var(--accent-green)' };
+  if (bmi < 30) return { label: 'Nadváha', color: '#FFB800' };
+  return { label: 'Obezita', color: 'var(--danger)' };
+}
+
+export function getWeekRangeLabel(reference: Date = new Date()): string {
+  const days = getWeekDays(reference);
+  const start = days[0].toLocaleDateString('sk-SK', { day: 'numeric', month: 'short' });
+  const end = days[6].toLocaleDateString('sk-SK', { day: 'numeric', month: 'short' });
+  return `${start} – ${end}`;
+}
+
+export function getDayShort(date: Date): string {
+  return date.toLocaleDateString('en-US', { weekday: 'narrow' });
+}
+
+export const EXPERIENCE_LABELS: Record<string, string> = {
+  beginner: 'Začiatočník',
+  intermediate: 'Pokročilý',
+  advanced: 'Expert',
+};
+
+export const FREQUENCY_LABELS: Record<string, string> = {
+  '2-3': '2–3× týždenne',
+  '4-5': '4–5× týždenne',
+  '6+': '6+× týždenne',
+};
+
+export const CATEGORY_LABELS: Record<string, string> = {
+  hybrid: 'Hybrid',
+  gym: 'Posilňovňa',
+  cardio: 'Kardio',
+  recovery: 'Regenerácia',
+  hiit: 'HIIT',
+  yoga: 'Jóga',
+};
+
+export const HABIT_LABELS: Record<string, string> = {
+  water: 'Voda 2L',
+  sleep: '8h spánok',
+  stretching: 'Strečing',
+  steps: '10k krokov',
+  meditation: 'Meditácia',
+  protein: 'Bielkoviny',
+};
