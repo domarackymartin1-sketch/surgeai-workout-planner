@@ -7,9 +7,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, ChevronRight, Check } from 'lucide-react';
 import Logo from '@/components/ui/Logo';
 import GreenButton from '@/components/ui/GreenButton';
+import RulerPicker from '@/components/ui/RulerPicker';
+import AnalysisScreen from '@/components/onboarding/AnalysisScreen';
+import ReviewsScreen from '@/components/onboarding/ReviewsScreen';
+import FeaturesScreen from '@/components/onboarding/FeaturesScreen';
 import { useStore } from '@/lib/store';
 import type {
   ExperienceLevel,
+  Gender,
   HabitId,
   OnboardingData,
   UserGoal,
@@ -24,9 +29,14 @@ import {
   HABIT_LABELS,
   calculateBMI,
   getBMICategory,
+  kgToLbs,
+  lbsToKg,
+  cmToFeetInches,
+  feetInchesToCm,
+  calcAgeFromBirthDate,
 } from '@/lib/utils';
 
-const TOTAL_QUESTIONS = 8;
+const TOTAL_QUESTIONS = 12;
 
 function useScrollLock(active: boolean) {
   useEffect(() => {
@@ -85,13 +95,7 @@ function LandingScreen({ onStart, onLogin }: { onStart: () => void; onLogin: () 
   );
 }
 
-function QuestionScreen({
-  step,
-  children,
-}: {
-  step: number;
-  children: React.ReactNode;
-}) {
+function QuestionScreen({ step, children }: { step: number; children: React.ReactNode }) {
   return (
     <OnboardingShell className="gradient-mesh">
       <div className="flex h-full flex-col overflow-hidden px-6 pb-8 pt-6">
@@ -109,7 +113,7 @@ function QuestionScreen({
           </div>
           <span className="text-xs text-white/40">{step + 1}/{TOTAL_QUESTIONS}</span>
         </div>
-        <div className="flex min-h-0 flex-1 flex-col justify-center overflow-hidden">
+        <div className="flex min-h-0 flex-1 flex-col justify-center overflow-y-auto no-overscroll">
           {children}
         </div>
       </div>
@@ -118,16 +122,8 @@ function QuestionScreen({
 }
 
 function SelectCard({
-  selected,
-  onClick,
-  children,
-  multi,
-}: {
-  selected: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-  multi?: boolean;
-}) {
+  selected, onClick, children, multi,
+}: { selected: boolean; onClick: () => void; children: React.ReactNode; multi?: boolean }) {
   return (
     <button
       type="button"
@@ -142,23 +138,61 @@ function SelectCard({
   );
 }
 
+function UnitToggle({ options, value, onChange }: {
+  options: { id: string; label: string }[];
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div className="mx-auto mb-6 flex w-fit rounded-full bg-white/10 p-1">
+      {options.map((o) => (
+        <button
+          key={o.id}
+          type="button"
+          onClick={() => onChange(o.id)}
+          className={`rounded-full px-6 py-2 text-sm font-semibold transition-colors ${
+            value === o.id ? 'bg-white text-black' : 'text-white/50'
+          }`}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 interface OnboardingFlowProps {
   data: OnboardingData;
   setData: React.Dispatch<React.SetStateAction<OnboardingData>>;
   step: number;
   setStep: (s: number) => void;
-  onFinish: () => void;
+  onQuestionsDone: () => void;
 }
 
-function OnboardingFlow({ data, setData, step, setStep, onFinish }: OnboardingFlowProps) {
+function OnboardingFlow({ data, setData, step, setStep, onQuestionsDone }: OnboardingFlowProps) {
   const update = <K extends keyof OnboardingData>(key: K, val: OnboardingData[K]) =>
     setData((d) => ({ ...d, [key]: val }));
 
   const next = () => setStep(step + 1);
+  const [weightUnit, setWeightUnit] = useState<'kg' | 'lbs'>('kg');
+  const [heightUnit, setHeightUnit] = useState<'cm' | 'ft'>('cm');
+  const [displayWeight, setDisplayWeight] = useState(70);
+  const [displayHeightCm, setDisplayHeightCm] = useState(175);
+  const [displayFt, setDisplayFt] = useState(5);
+  const [displayIn, setDisplayIn] = useState(9);
+
+  useEffect(() => {
+    if (data.birthDate) {
+      const age = calcAgeFromBirthDate(data.birthDate);
+      if (age > 0) update('age', age);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data.birthDate]);
 
   if (step === 1) {
     return (
       <QuestionScreen step={0}>
+        <p className="mb-1 text-sm text-white/40">Otázka 1</p>
         <h2 className="mb-2 font-display text-2xl font-bold sm:text-3xl">Ako sa voláš?</h2>
         <p className="mb-6 text-sm text-white/45">Personalizujeme tvoju fitness cestu.</p>
         <div className="glass-card mb-6 px-4">
@@ -171,36 +205,97 @@ function OnboardingFlow({ data, setData, step, setStep, onFinish }: OnboardingFl
           />
         </div>
         <GreenButton onClick={() => data.name.trim() && next()} disabled={!data.name.trim()} fullWidth pill>
-          Pokračovať <ChevronRight size={18} />
+          Ďalej <ChevronRight size={18} />
         </GreenButton>
       </QuestionScreen>
     );
   }
 
   if (step === 2) {
-    const goals: UserGoal[] = ['muscle', 'loss', 'maintain', 'strength'];
+    const genders: { id: Gender; label: string }[] = [
+      { id: 'male', label: 'Muž' },
+      { id: 'female', label: 'Žena' },
+      { id: 'other', label: 'Iné' },
+    ];
     return (
       <QuestionScreen step={1}>
-        <h2 className="mb-2 font-display text-2xl font-bold sm:text-3xl">Tvoj hlavný cieľ?</h2>
-        <p className="mb-5 text-sm text-white/45">Čo chceš dosiahnuť?</p>
-        <div className="mb-6 flex max-h-[50vh] flex-col gap-2.5 overflow-y-auto hide-scrollbar">
-          {goals.map((g) => (
-            <SelectCard key={g} selected={data.goal === g} onClick={() => update('goal', g)}>
-              {GOAL_LABELS[g]}
+        <p className="mb-1 text-sm text-white/40">Otázka 2</p>
+        <h2 className="mb-2 font-display text-2xl font-bold sm:text-3xl">Pohlavie</h2>
+        <p className="mb-5 text-sm text-white/45">Pre personalizáciu plánu.</p>
+        <div className="mb-6 flex flex-col gap-2.5">
+          {genders.map((g) => (
+            <SelectCard key={g.id} selected={data.gender === g.id} onClick={() => update('gender', g.id)}>
+              {g.label}
             </SelectCard>
           ))}
         </div>
-        <GreenButton onClick={next} fullWidth pill>Pokračovať <ChevronRight size={18} /></GreenButton>
+        <GreenButton onClick={next} disabled={!data.gender} fullWidth pill>Ďalej <ChevronRight size={18} /></GreenButton>
       </QuestionScreen>
     );
   }
 
   if (step === 3) {
-    const levels: ExperienceLevel[] = ['beginner', 'intermediate', 'advanced'];
     return (
       <QuestionScreen step={2}>
+        <p className="mb-1 text-sm text-white/40">Otázka 3</p>
+        <h2 className="mb-2 font-display text-2xl font-bold sm:text-3xl">Dátum narodenia</h2>
+        <p className="mb-6 text-sm text-white/45">Pre výpočet veku a plánu.</p>
+        <div className="glass-card mb-6 px-4 py-4">
+          <input
+            type="date"
+            value={data.birthDate}
+            onChange={(e) => update('birthDate', e.target.value)}
+            max={formatDateISO()}
+            className="w-full bg-transparent text-lg outline-none [color-scheme:dark]"
+          />
+        </div>
+        <GreenButton onClick={next} disabled={!data.birthDate} fullWidth pill>Ďalej <ChevronRight size={18} /></GreenButton>
+      </QuestionScreen>
+    );
+  }
+
+  if (step === 4) {
+    return (
+      <QuestionScreen step={3}>
+        <p className="mb-1 text-sm text-white/40">Otázka 4</p>
+        <h2 className="mb-2 font-display text-2xl font-bold sm:text-3xl">Koľko máš rokov?</h2>
+        <p className="mb-6 text-sm text-white/45">Potvrď alebo uprav svoj vek.</p>
+        <div className="mb-6">
+          <RulerPicker
+            min={14}
+            max={80}
+            step={1}
+            value={data.age || 25}
+            onChange={(v) => update('age', v)}
+            formatValue={(v) => String(v)}
+            unit="rokov"
+          />
+        </div>
+        <GreenButton onClick={next} disabled={!data.age} fullWidth pill>Ďalej <ChevronRight size={18} /></GreenButton>
+      </QuestionScreen>
+    );
+  }
+
+  if (step === 5) {
+    const goals: UserGoal[] = ['muscle', 'loss', 'maintain', 'strength'];
+    return (
+      <QuestionScreen step={4}>
+        <h2 className="mb-2 font-display text-2xl font-bold sm:text-3xl">Tvoj hlavný cieľ?</h2>
+        <div className="mb-6 flex max-h-[50vh] flex-col gap-2.5 overflow-y-auto hide-scrollbar">
+          {goals.map((g) => (
+            <SelectCard key={g} selected={data.goal === g} onClick={() => update('goal', g)}>{GOAL_LABELS[g]}</SelectCard>
+          ))}
+        </div>
+        <GreenButton onClick={next} fullWidth pill>Ďalej <ChevronRight size={18} /></GreenButton>
+      </QuestionScreen>
+    );
+  }
+
+  if (step === 6) {
+    const levels: ExperienceLevel[] = ['beginner', 'intermediate', 'advanced'];
+    return (
+      <QuestionScreen step={5}>
         <h2 className="mb-2 font-display text-2xl font-bold sm:text-3xl">Tvoja úroveň?</h2>
-        <p className="mb-5 text-sm text-white/45">Ako dlho cvičíš?</p>
         <div className="mb-6 flex flex-col gap-2.5">
           {levels.map((l) => (
             <SelectCard key={l} selected={data.experienceLevel === l} onClick={() => update('experienceLevel', l)}>
@@ -208,17 +303,16 @@ function OnboardingFlow({ data, setData, step, setStep, onFinish }: OnboardingFl
             </SelectCard>
           ))}
         </div>
-        <GreenButton onClick={next} fullWidth pill>Pokračovať <ChevronRight size={18} /></GreenButton>
+        <GreenButton onClick={next} fullWidth pill>Ďalej <ChevronRight size={18} /></GreenButton>
       </QuestionScreen>
     );
   }
 
-  if (step === 4) {
+  if (step === 7) {
     const freqs: WorkoutFrequency[] = ['2-3', '4-5', '6+'];
     return (
-      <QuestionScreen step={3}>
+      <QuestionScreen step={6}>
         <h2 className="mb-2 font-display text-2xl font-bold sm:text-3xl">Ako často cvičíš?</h2>
-        <p className="mb-5 text-sm text-white/45">Nastavíme ti týždenný plán.</p>
         <div className="mb-6 flex flex-col gap-2.5">
           {freqs.map((f) => (
             <SelectCard key={f} selected={data.workoutFrequency === f} onClick={() => update('workoutFrequency', f)}>
@@ -226,21 +320,20 @@ function OnboardingFlow({ data, setData, step, setStep, onFinish }: OnboardingFl
             </SelectCard>
           ))}
         </div>
-        <GreenButton onClick={next} fullWidth pill>Pokračovať <ChevronRight size={18} /></GreenButton>
+        <GreenButton onClick={next} fullWidth pill>Ďalej <ChevronRight size={18} /></GreenButton>
       </QuestionScreen>
     );
   }
 
-  if (step === 5) {
+  if (step === 8) {
     const cats: WorkoutCategory[] = ['gym', 'cardio', 'hybrid', 'hiit', 'yoga', 'recovery'];
     const toggle = (c: WorkoutCategory) => {
       const has = data.categories.includes(c);
       update('categories', has ? data.categories.filter((x) => x !== c) : [...data.categories, c]);
     };
     return (
-      <QuestionScreen step={4}>
+      <QuestionScreen step={7}>
         <h2 className="mb-2 font-display text-2xl font-bold sm:text-3xl">Vyber kategórie</h2>
-        <p className="mb-5 text-sm text-white/45">Môžeš vybrať viac možností.</p>
         <div className="mb-6 grid grid-cols-2 gap-2.5">
           {cats.map((c) => (
             <SelectCard key={c} selected={data.categories.includes(c)} onClick={() => toggle(c)} multi>
@@ -249,65 +342,122 @@ function OnboardingFlow({ data, setData, step, setStep, onFinish }: OnboardingFl
           ))}
         </div>
         <GreenButton onClick={next} disabled={data.categories.length === 0} fullWidth pill>
-          Pokračovať <ChevronRight size={18} />
+          Ďalej <ChevronRight size={18} />
         </GreenButton>
       </QuestionScreen>
     );
   }
 
-  if (step === 6) {
-    const bmi = calculateBMI(data.weightKg, data.heightCm);
-    const cat = getBMICategory(bmi);
+  if (step === 9) {
+    const handleWeightChange = (v: number) => {
+      setDisplayWeight(v);
+      update('weightKg', weightUnit === 'kg' ? v : lbsToKg(v));
+    };
     return (
-      <QuestionScreen step={5}>
-        <h2 className="mb-2 font-display text-2xl font-bold sm:text-3xl">Tvoje miery</h2>
-        <p className="mb-5 text-sm text-white/45">Pre BMI kalkulačku a personalizáciu.</p>
-        <div className="mb-4 grid grid-cols-2 gap-3">
-          <div className="glass-card px-4 py-3">
-            <label className="text-xs text-white/40">Výška (cm)</label>
-            <input
-              type="number"
-              value={data.heightCm || ''}
-              onChange={(e) => update('heightCm', Number(e.target.value))}
-              className="w-full bg-transparent py-2 text-2xl font-bold text-accent-green outline-none"
-              placeholder="175"
-            />
-          </div>
-          <div className="glass-card px-4 py-3">
-            <label className="text-xs text-white/40">Váha (kg)</label>
-            <input
-              type="number"
-              value={data.weightKg || ''}
-              onChange={(e) => update('weightKg', Number(e.target.value))}
-              className="w-full bg-transparent py-2 text-2xl font-bold text-accent-green outline-none"
-              placeholder="75"
-            />
-          </div>
-        </div>
-        {bmi > 0 && (
-          <div className="glass-card mb-6 p-4 text-center">
-            <p className="text-xs text-white/40">Tvoje BMI</p>
-            <p className="font-display text-4xl font-bold" style={{ color: cat.color }}>{bmi}</p>
-            <p className="text-sm" style={{ color: cat.color }}>{cat.label}</p>
+      <QuestionScreen step={8}>
+        <p className="mb-1 text-sm text-white/40">Otázka 9</p>
+        <h2 className="mb-2 text-center font-display text-2xl font-bold sm:text-3xl">Koľko vážiš?</h2>
+        <p className="mb-4 text-center text-sm text-white/45">Posuň mierku pre výber váhy</p>
+        <UnitToggle
+          options={[{ id: 'kg', label: 'kg' }, { id: 'lbs', label: 'lbs' }]}
+          value={weightUnit}
+          onChange={(u) => {
+            const unit = u as 'kg' | 'lbs';
+            if (unit === 'lbs') setDisplayWeight(kgToLbs(data.weightKg || displayWeight));
+            else setDisplayWeight(data.weightKg || displayWeight);
+            setWeightUnit(unit);
+          }}
+        />
+        <RulerPicker
+          min={weightUnit === 'kg' ? 40 : 88}
+          max={weightUnit === 'kg' ? 150 : 330}
+          step={0.1}
+          value={displayWeight}
+          onChange={handleWeightChange}
+          formatValue={(v) => v.toFixed(1)}
+          unit={weightUnit}
+        />
+        <GreenButton onClick={next} disabled={!data.weightKg} fullWidth pill className="mt-6">
+          Ďalej <ChevronRight size={18} />
+        </GreenButton>
+      </QuestionScreen>
+    );
+  }
+
+  if (step === 10) {
+    const handleCmChange = (v: number) => {
+      setDisplayHeightCm(v);
+      update('heightCm', v);
+      const fi = cmToFeetInches(v);
+      setDisplayFt(fi.ft);
+      setDisplayIn(fi.inches);
+    };
+    const handleInchesChange = (totalIn: number) => {
+      const ft = Math.floor(totalIn / 12);
+      const inches = totalIn % 12;
+      setDisplayFt(ft);
+      setDisplayIn(inches);
+      update('heightCm', feetInchesToCm(ft, inches));
+    };
+    return (
+      <QuestionScreen step={9}>
+        <p className="mb-1 text-sm text-white/40">Otázka 10</p>
+        <h2 className="mb-2 text-center font-display text-2xl font-bold sm:text-3xl">Koľko meriaš?</h2>
+        <p className="mb-4 text-center text-sm text-white/45">Posuň mierku pre výber výšky</p>
+        <UnitToggle
+          options={[{ id: 'cm', label: 'cm' }, { id: 'ft', label: 'ft' }]}
+          value={heightUnit}
+          onChange={(u) => setHeightUnit(u as 'cm' | 'ft')}
+        />
+        {heightUnit === 'cm' ? (
+          <RulerPicker
+            min={140}
+            max={220}
+            step={1}
+            value={displayHeightCm}
+            onChange={handleCmChange}
+            formatValue={(v) => String(Math.round(v))}
+            unit="cm"
+          />
+        ) : (
+          <RulerPicker
+            min={55}
+            max={87}
+            step={1}
+            value={displayFt * 12 + displayIn}
+            onChange={handleInchesChange}
+            formatValue={(v) => {
+              const ft = Math.floor(v / 12);
+              const inches = v % 12;
+              return `${ft}'${inches}"`;
+            }}
+            unit=""
+          />
+        )}
+        {data.heightCm > 0 && (
+          <div className="glass-card mb-4 mt-4 p-3 text-center">
+            <p className="text-xs text-white/40">BMI náhľad</p>
+            <p className="text-lg font-bold text-accent-green">
+              {calculateBMI(data.weightKg, data.heightCm)}
+            </p>
           </div>
         )}
-        <GreenButton onClick={next} disabled={!data.heightCm || !data.weightKg} fullWidth pill>
-          Pokračovať <ChevronRight size={18} />
+        <GreenButton onClick={next} disabled={!data.heightCm} fullWidth pill>
+          Ďalej <ChevronRight size={18} />
         </GreenButton>
       </QuestionScreen>
     );
   }
 
-  if (step === 7) {
+  if (step === 11) {
     const habits: HabitId[] = ['water', 'sleep', 'stretching', 'steps', 'meditation', 'protein'];
     const toggle = (h: HabitId) => {
       const has = data.habits.includes(h);
       update('habits', has ? data.habits.filter((x) => x !== h) : [...data.habits, h]);
     };
     return (
-      <QuestionScreen step={6}>
+      <QuestionScreen step={10}>
         <h2 className="mb-2 font-display text-2xl font-bold sm:text-3xl">Denné návyky</h2>
-        <p className="mb-5 text-sm text-white/45">Čo chceš sledovať každý deň?</p>
         <div className="mb-6 grid grid-cols-2 gap-2.5">
           {habits.map((h) => (
             <SelectCard key={h} selected={data.habits.includes(h)} onClick={() => toggle(h)} multi>
@@ -316,17 +466,16 @@ function OnboardingFlow({ data, setData, step, setStep, onFinish }: OnboardingFl
           ))}
         </div>
         <GreenButton onClick={next} disabled={data.habits.length === 0} fullWidth pill>
-          Pokračovať <ChevronRight size={18} />
+          Ďalej <ChevronRight size={18} />
         </GreenButton>
       </QuestionScreen>
     );
   }
 
-  if (step === 8) {
+  if (step === 12) {
     return (
-      <QuestionScreen step={7}>
+      <QuestionScreen step={11}>
         <h2 className="mb-2 font-display text-2xl font-bold sm:text-3xl">Kalorický cieľ</h2>
-        <p className="mb-6 text-sm text-white/45">Denný príjem kalórií.</p>
         <div className="glass-card mb-6 px-4 py-4 text-center">
           <input
             type="number"
@@ -336,8 +485,8 @@ function OnboardingFlow({ data, setData, step, setStep, onFinish }: OnboardingFl
           />
           <span className="text-sm text-white/40">kcal / deň</span>
         </div>
-        <GreenButton fullWidth pill onClick={onFinish}>
-          Začať trénovať ⚡
+        <GreenButton fullWidth pill onClick={onQuestionsDone}>
+          Analyzovať odpovede <ChevronRight size={18} />
         </GreenButton>
       </QuestionScreen>
     );
@@ -346,8 +495,18 @@ function OnboardingFlow({ data, setData, step, setStep, onFinish }: OnboardingFl
   return null;
 }
 
+function formatDateISO(date: Date = new Date()): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
 const defaultData: OnboardingData = {
   name: '',
+  gender: 'male',
+  birthDate: '',
+  age: 25,
   goal: 'muscle',
   experienceLevel: 'beginner',
   workoutFrequency: '4-5',
@@ -394,9 +553,30 @@ export default function Onboarding() {
           <LandingScreen onStart={() => setStep(1)} onLogin={handleLogin} />
         </motion.div>
       )}
-      {step >= 1 && step <= 8 && (
+      {step >= 1 && step <= 12 && (
         <motion.div key={`step-${step}`} initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }}>
-          <OnboardingFlow data={data} setData={setData} step={step} setStep={setStep} onFinish={handleFinish} />
+          <OnboardingFlow
+            data={data}
+            setData={setData}
+            step={step}
+            setStep={setStep}
+            onQuestionsDone={() => setStep(13)}
+          />
+        </motion.div>
+      )}
+      {step === 13 && (
+        <motion.div key="analysis" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          <AnalysisScreen onNext={() => setStep(14)} />
+        </motion.div>
+      )}
+      {step === 14 && (
+        <motion.div key="reviews" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          <ReviewsScreen onNext={() => setStep(15)} onBack={() => setStep(13)} />
+        </motion.div>
+      )}
+      {step === 15 && (
+        <motion.div key="features" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          <FeaturesScreen onFinish={handleFinish} onBack={() => setStep(14)} />
         </motion.div>
       )}
     </AnimatePresence>

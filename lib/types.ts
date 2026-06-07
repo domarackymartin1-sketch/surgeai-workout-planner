@@ -4,6 +4,13 @@ export type WorkoutFrequency = '2-3' | '4-5' | '6+';
 export type WorkoutCategory = 'hybrid' | 'gym' | 'cardio' | 'recovery' | 'hiit' | 'yoga';
 export type HabitId = 'water' | 'sleep' | 'stretching' | 'steps' | 'meditation' | 'protein';
 export type MealType = 'breakfast' | 'snack' | 'lunch' | 'afternoon' | 'dinner';
+export type Gender = 'male' | 'female' | 'other';
+
+export interface WaterEntry {
+  id: string;
+  amountMl: number;
+  time: string;
+}
 
 export interface Exercise {
   id: string;
@@ -60,6 +67,7 @@ export interface NutritionLog {
   date: string;
   items: FoodItem[];
   totalKcal: number;
+  waterEntries?: WaterEntry[];
 }
 
 export interface WeightEntry {
@@ -77,7 +85,11 @@ export interface BodyMeasurement {
 
 export interface UserProfile {
   name: string;
+  gender?: Gender;
+  birthDate?: string;
+  age?: number;
   goal: UserGoal;
+  dailyWaterTargetMl?: number;
   dailyKcalTarget: number;
   dailyProteinTarget?: number;
   avatarUrl?: string;
@@ -129,6 +141,9 @@ export interface ActiveWorkout {
 
 export interface OnboardingData {
   name: string;
+  gender: Gender;
+  birthDate: string;
+  age: number;
   goal: UserGoal;
   experienceLevel: ExperienceLevel;
   workoutFrequency: WorkoutFrequency;

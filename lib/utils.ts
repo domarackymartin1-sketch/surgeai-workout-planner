@@ -1,7 +1,39 @@
 import type { SetLog, WorkoutLog } from './types';
 
 export function formatDateISO(date: Date = new Date()): string {
-  return date.toISOString().split('T')[0];
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+export function kgToLbs(kg: number): number {
+  return +(kg * 2.20462).toFixed(1);
+}
+
+export function lbsToKg(lbs: number): number {
+  return +(lbs / 2.20462).toFixed(1);
+}
+
+export function cmToFeetInches(cm: number): { ft: number; inches: number } {
+  const totalInches = cm / 2.54;
+  const ft = Math.floor(totalInches / 12);
+  const inches = Math.round(totalInches % 12);
+  return { ft, inches };
+}
+
+export function feetInchesToCm(ft: number, inches: number): number {
+  return Math.round((ft * 12 + inches) * 2.54);
+}
+
+export function calcAgeFromBirthDate(birthDate: string): number {
+  if (!birthDate) return 0;
+  const birth = new Date(birthDate);
+  const today = new Date();
+  let age = today.getFullYear() - birth.getFullYear();
+  const m = today.getMonth() - birth.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+  return age;
 }
 
 export function getWeekDays(reference: Date = new Date()): Date[] {

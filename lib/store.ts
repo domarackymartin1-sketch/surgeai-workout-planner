@@ -18,6 +18,7 @@ import type {
   WorkoutLog,
   WorkoutPlan,
 } from './types';
+import type { ChatMessage } from './aiCoach';
 import { DEFAULT_PLANS, getExerciseById } from './exercises';
 import { calculateBMI, calculateVolume, formatDateISO, generateId } from './utils';
 
@@ -34,6 +35,8 @@ interface AppState {
   weekOffset: number;
   nutritionWeekOffset: number;
   nutritionSelectedDate: string;
+  homeSelectedDate: string;
+  aiChatMessages: ChatMessage[];
 
   saveOnboarding: (data: OnboardingData) => void;
   completeOnboarding: () => void;
@@ -41,6 +44,9 @@ interface AppState {
   setWeekOffset: (offset: number) => void;
   setNutritionWeekOffset: (offset: number) => void;
   setNutritionSelectedDate: (date: string) => void;
+  setHomeSelectedDate: (date: string) => void;
+  addAiMessage: (message: ChatMessage) => void;
+  clearAiChat: () => void;
 
   addPlan: (plan: Omit<WorkoutPlan, 'id'>) => void;
   updatePlan: (id: string, plan: Partial<WorkoutPlan>) => void;
@@ -54,8 +60,14 @@ interface AppState {
 
   addFood: (item: Omit<FoodItem, 'id'>, date?: string) => void;
   removeFood: (date: string, itemId: string) => void;
+  addWaterEntry: (amountMl: number, time: string, date?: string) => void;
+  removeWaterEntry: (date: string, entryId: string) => void;
   updateProfile: (updates: Partial<UserProfile>) => void;
-  updateNutritionTargets: (targets: { dailyKcalTarget?: number; dailyProteinTarget?: number }) => void;
+  updateNutritionTargets: (targets: {
+    dailyKcalTarget?: number;
+    dailyProteinTarget?: number;
+    dailyWaterTargetMl?: number;
+  }) => void;
   getTodayNutrition: () => NutritionLog;
   getNutritionForDate: (date: string) => NutritionLog;
 
@@ -113,14 +125,21 @@ export const useStore = create<AppState>()(
       weekOffset: 0,
       nutritionWeekOffset: 0,
       nutritionSelectedDate: formatDateISO(),
+      homeSelectedDate: formatDateISO(),
+      aiChatMessages: [],
 
       saveOnboarding: (data) => {
         const bmi = calculateBMI(data.weightKg, data.heightCm);
         set({
           profile: {
             name: data.name,
+            gender: data.gender,
+            birthDate: data.birthDate,
+            age: data.age,
             goal: data.goal,
             dailyKcalTarget: data.dailyKcalTarget,
+            dailyProteinTarget: Math.round((data.dailyKcalTarget * 0.3) / 4),
+            dailyWaterTargetMl: 2500,
             experienceLevel: data.experienceLevel,
             workoutFrequency: data.workoutFrequency,
             categories: data.categories,
@@ -145,10 +164,19 @@ export const useStore = create<AppState>()(
 
       resetOnboarding: () => set({ profile: null }),
 
-      setWeekOffset: (offset) => set({ weekOffset: Math.max(0, offset) }),
+      setWeekOffset: (offset) =>
+        set({ weekOffset: Math.max(-8, Math.min(52, offset)) }),
       setNutritionWeekOffset: (offset) =>
         set({ nutritionWeekOffset: Math.max(-8, Math.min(52, offset)) }),
       setNutritionSelectedDate: (date) => set({ nutritionSelectedDate: date }),
+      setHomeSelectedDate: (date) => set({ homeSelectedDate: date }),
+
+      addAiMessage: (message) =>
+        set((state) => ({
+          aiChatMessages: [...state.aiChatMessages, message],
+        })),
+
+      clearAiChat: () => set({ aiChatMessages: [] }),
 
       addPlan: (plan) =>
         set((state) => ({
@@ -311,8 +339,44 @@ export const useStore = create<AppState>()(
                 ...(targets.dailyProteinTarget !== undefined && {
                   dailyProteinTarget: targets.dailyProteinTarget,
                 }),
+                ...(targets.dailyWaterTargetMl !== undefined && {
+                  dailyWaterTargetMl: targets.dailyWaterTargetMl,
+                }),
               }
             : null,
+        })),
+
+      addWaterEntry: (amountMl, time, date) => {
+        const targetDate = date ?? formatDateISO();
+        const entry = { id: generateId(), amountMl, time };
+        set((state) => {
+          const existing = state.nutritionLogs.find((l) => l.date === targetDate);
+          if (existing) {
+            const waterEntries = [...(existing.waterEntries ?? []), entry];
+            return {
+              nutritionLogs: state.nutritionLogs.map((l) =>
+                l.date === targetDate ? { ...l, waterEntries } : l
+              ),
+            };
+          }
+          return {
+            nutritionLogs: [
+              ...state.nutritionLogs,
+              { date: targetDate, items: [], totalKcal: 0, waterEntries: [entry] },
+            ],
+          };
+        });
+      },
+
+      removeWaterEntry: (date, entryId) =>
+        set((state) => ({
+          nutritionLogs: state.nutritionLogs.map((l) => {
+            if (l.date !== date) return l;
+            return {
+              ...l,
+              waterEntries: (l.waterEntries ?? []).filter((e) => e.id !== entryId),
+            };
+          }),
         })),
 
       getTodayNutrition: () => {
@@ -322,7 +386,7 @@ export const useStore = create<AppState>()(
 
       getNutritionForDate: (date) => {
         const log = get().nutritionLogs.find((l) => l.date === date);
-        return log ?? { date, items: [], totalKcal: 0 };
+        return log ?? { date, items: [], totalKcal: 0, waterEntries: [] };
       },
 
       addWeight: (weight) =>
@@ -441,7 +505,7 @@ export const useStore = create<AppState>()(
     }),
     {
       name: 'surgeai-store',
-      version: 4,
+      version: 5,
       migrate: (persisted: unknown, version) => {
         const state = persisted as AppState;
         if (state?.profile && !('experienceLevel' in state.profile)) {
@@ -459,9 +523,15 @@ export const useStore = create<AppState>()(
           }
           state.nutritionLogs?.forEach((log) => {
             log.items.forEach((item) => {
-              if (!item.mealType) item.mealType = 'lunch';
+              if (!('mealType' in item) || !item.mealType) {
+                (item as FoodItem).mealType = 'lunch';
+              }
             });
           });
+        }
+        if (state && version < 5) {
+          if (!state.homeSelectedDate) state.homeSelectedDate = formatDateISO();
+          if (!state.aiChatMessages) state.aiChatMessages = [];
         }
         return state;
       },

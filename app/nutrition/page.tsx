@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Settings, Flame, QrCode, Trash2, X } from 'lucide-react';
+import { Settings, QrCode, Trash2, X } from 'lucide-react';
 import PageTransition from '@/components/layout/PageTransition';
 import NutritionWeekStrip from '@/components/nutrition/NutritionWeekStrip';
 import MacroDots from '@/components/nutrition/MacroDots';
+import WaterTracker from '@/components/nutrition/WaterTracker';
 import GreenButton from '@/components/ui/GreenButton';
 import { useStore } from '@/lib/store';
 import { formatDateISO } from '@/lib/utils';
@@ -155,7 +156,7 @@ export default function NutritionPage() {
     <div className="gradient-mesh app-screen">
       <main className="page-container">
         <PageTransition>
-          <header className="mb-6 grid grid-cols-[44px_1fr_88px] items-center gap-2 px-1 pt-1">
+          <header className="mb-6 grid grid-cols-[44px_1fr_44px] items-center px-1 pt-1">
             <button
               type="button"
               onClick={openSettings}
@@ -168,10 +169,7 @@ export default function NutritionPage() {
               <h1 className="page-title mb-0 text-xl">Nutrition</h1>
               <span className="rounded-md bg-accent-green px-1.5 py-0.5 text-[10px] font-bold text-black">PRO</span>
             </div>
-            <div className="flex justify-end gap-2">
-              <button type="button" className="glass flex h-10 w-10 items-center justify-center rounded-xl text-white/50">
-                <Flame size={18} />
-              </button>
+            <div className="flex justify-end">
               <button type="button" className="glass flex h-10 w-10 items-center justify-center rounded-xl text-white/50">
                 <QrCode size={18} />
               </button>
@@ -205,6 +203,12 @@ export default function NutritionPage() {
               </button>
             </div>
           </section>
+
+          <WaterTracker
+            date={nutritionSelectedDate}
+            entries={selectedLog.waterEntries ?? []}
+            dailyTarget={profile?.dailyWaterTargetMl ?? 2500}
+          />
 
           <section className="mb-8">
             <h2 className="section-title">

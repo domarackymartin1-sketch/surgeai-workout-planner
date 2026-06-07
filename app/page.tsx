@@ -28,7 +28,7 @@ export default function HomePage() {
 
   return (
     <div className="gradient-mesh app-screen">
-      <main className="page-container text-center">
+      <main className="page-container no-overscroll text-center">
         <PageTransition>
           <DashboardTopBar />
           <WeekCalendar />

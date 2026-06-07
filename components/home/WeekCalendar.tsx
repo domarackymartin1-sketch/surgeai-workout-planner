@@ -7,6 +7,8 @@ import { formatDateISO, getWeekDays } from '@/lib/utils';
 export default function WeekCalendar() {
   const weekOffset = useStore((s) => s.weekOffset);
   const setWeekOffset = useStore((s) => s.setWeekOffset);
+  const homeSelectedDate = useStore((s) => s.homeSelectedDate);
+  const setHomeSelectedDate = useStore((s) => s.setHomeSelectedDate);
   const workoutLogs = useStore((s) => s.workoutLogs);
 
   const ref = new Date();
@@ -17,11 +19,27 @@ export default function WeekCalendar() {
     return { date: dateStr, badge: workouts };
   });
 
+  const handleWeekChange = (offset: number) => {
+    setWeekOffset(offset);
+    const weekRef = new Date();
+    weekRef.setDate(weekRef.getDate() - offset * 7);
+    const weekStrs = getWeekDays(weekRef).map((d) => formatDateISO(d));
+    const today = formatDateISO();
+    if (weekStrs.includes(today)) {
+      setHomeSelectedDate(today);
+    } else if (!weekStrs.includes(homeSelectedDate)) {
+      setHomeSelectedDate(weekStrs[0]);
+    }
+  };
+
   return (
     <WeekPillCalendar
       weekOffset={weekOffset}
-      onWeekChange={setWeekOffset}
+      onWeekChange={handleWeekChange}
       days={days}
+      selectedDate={homeSelectedDate}
+      onSelectDate={setHomeSelectedDate}
+      allowFuture
     />
   );
 }

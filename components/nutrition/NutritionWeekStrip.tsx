@@ -26,10 +26,23 @@ export default function NutritionWeekStrip() {
     };
   });
 
+  const handleWeekChange = (offset: number) => {
+    setNutritionWeekOffset(offset);
+    const weekRef = new Date();
+    weekRef.setDate(weekRef.getDate() - offset * 7);
+    const weekStrs = getWeekDays(weekRef).map((d) => formatDateISO(d));
+    const today = formatDateISO();
+    if (weekStrs.includes(today)) {
+      setNutritionSelectedDate(today);
+    } else if (!weekStrs.includes(nutritionSelectedDate)) {
+      setNutritionSelectedDate(weekStrs[0]);
+    }
+  };
+
   return (
     <WeekPillCalendar
       weekOffset={nutritionWeekOffset}
-      onWeekChange={setNutritionWeekOffset}
+      onWeekChange={handleWeekChange}
       days={days}
       selectedDate={nutritionSelectedDate}
       onSelectDate={setNutritionSelectedDate}

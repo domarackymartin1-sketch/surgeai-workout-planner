@@ -76,7 +76,7 @@ export default function WeekPillCalendar({
           const isToday = dateStr === today;
           const isSelected = selectedDate
             ? dateStr === selectedDate
-            : isToday && isCurrentWeek;
+            : isToday;
           const data = dayMap.get(dateStr);
           const badge = data?.badge ?? 0;
           const dayLetter = date.toLocaleDateString('en-US', { weekday: 'narrow' });
