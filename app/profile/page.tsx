@@ -14,7 +14,7 @@ export default function ProfilePage() {
   const profile = useStore((s) => s.profile);
 
   return (
-    <div className="gradient-mesh min-h-dvh">
+    <div className="gradient-mesh app-screen">
       <main className="page-container !px-0">
         <PageTransition>
           <ProfileHeader />

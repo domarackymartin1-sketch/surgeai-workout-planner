@@ -1,13 +1,22 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Settings, Flame, QrCode, Trash2 } from 'lucide-react';
+import { Settings, Flame, QrCode, Trash2, X } from 'lucide-react';
 import PageTransition from '@/components/layout/PageTransition';
 import NutritionWeekStrip from '@/components/nutrition/NutritionWeekStrip';
 import MacroDots from '@/components/nutrition/MacroDots';
 import GreenButton from '@/components/ui/GreenButton';
 import { useStore } from '@/lib/store';
 import { formatDateISO } from '@/lib/utils';
+import type { MealType } from '@/lib/types';
+
+const MEAL_OPTIONS: { id: MealType; label: string }[] = [
+  { id: 'breakfast', label: 'Raňajky' },
+  { id: 'snack', label: 'Desiata' },
+  { id: 'lunch', label: 'Obed' },
+  { id: 'afternoon', label: 'Olovrant' },
+  { id: 'dinner', label: 'Večera' },
+];
 
 function CalorieArc({ consumed, goal }: { consumed: number; goal: number }) {
   const size = 220;
@@ -20,7 +29,7 @@ function CalorieArc({ consumed, goal }: { consumed: number; goal: number }) {
 
   return (
     <section className="mb-8 text-center">
-      <h2 className="mb-6 text-left text-lg font-bold text-white">Denný cieľ</h2>
+      <h2 className="section-title">Denný cieľ</h2>
       <div className="relative mx-auto flex max-w-sm items-center justify-center">
         <p className="absolute left-0 text-center">
           <span className="block text-2xl font-bold text-white">{remaining}</span>
@@ -63,11 +72,17 @@ export default function NutritionPage() {
   const getNutritionForDate = useStore((s) => s.getNutritionForDate);
   const addFood = useStore((s) => s.addFood);
   const removeFood = useStore((s) => s.removeFood);
+  const updateNutritionTargets = useStore((s) => s.updateNutritionTargets);
   const [foodName, setFoodName] = useState('');
   const [foodKcal, setFoodKcal] = useState('');
+  const [mealType, setMealType] = useState<MealType>('lunch');
+  const [showSettings, setShowSettings] = useState(false);
+  const [proteinGoal, setProteinGoal] = useState('');
+  const [kcalGoal, setKcalGoal] = useState('');
 
   const selectedLog = getNutritionForDate(nutritionSelectedDate);
   const goal = profile?.dailyKcalTarget ?? 2500;
+  const proteinTarget = profile?.dailyProteinTarget ?? Math.round((goal * 0.3) / 4);
   const today = formatDateISO();
   const isToday = nutritionSelectedDate === today;
 
@@ -83,39 +98,77 @@ export default function NutritionPage() {
     const protein = selectedLog.items.reduce((s, i) => s + (i.protein ?? i.kcal * 0.3 / 4), 0);
     const carbs = selectedLog.items.reduce((s, i) => s + (i.carbs ?? i.kcal * 0.45 / 4), 0);
     const fat = selectedLog.items.reduce((s, i) => s + (i.fat ?? i.kcal * 0.25 / 9), 0);
-    const proteinTarget = Math.round((goal * 0.3) / 4);
     const carbsTarget = Math.round((goal * 0.45) / 4);
     const fatTarget = Math.round((goal * 0.25) / 9);
     return { protein, carbs, fat, proteinTarget, carbsTarget, fatTarget };
-  }, [selectedLog.items, goal]);
+  }, [selectedLog.items, goal, proteinTarget]);
+
+  const itemsByMeal = useMemo(() => {
+    const grouped: Record<MealType, typeof selectedLog.items> = {
+      breakfast: [],
+      snack: [],
+      lunch: [],
+      afternoon: [],
+      dinner: [],
+    };
+    selectedLog.items.forEach((item) => {
+      grouped[item.mealType ?? 'lunch'].push(item);
+    });
+    return grouped;
+  }, [selectedLog]);
 
   const handleAdd = () => {
     if (!foodName.trim() || !foodKcal) return;
     const kcal = Number(foodKcal);
-    addFood({
-      name: foodName.trim(),
-      kcal,
-      protein: Math.round((kcal * 0.3) / 4),
-      carbs: Math.round((kcal * 0.45) / 4),
-      fat: Math.round((kcal * 0.25) / 9),
-    }, nutritionSelectedDate);
+    addFood(
+      {
+        name: foodName.trim(),
+        kcal,
+        mealType,
+        protein: Math.round((kcal * 0.3) / 4),
+        carbs: Math.round((kcal * 0.45) / 4),
+        fat: Math.round((kcal * 0.25) / 9),
+      },
+      nutritionSelectedDate
+    );
     setFoodName('');
     setFoodKcal('');
   };
 
+  const openSettings = () => {
+    setProteinGoal(String(proteinTarget));
+    setKcalGoal(String(goal));
+    setShowSettings(true);
+  };
+
+  const saveSettings = () => {
+    const p = Number(proteinGoal);
+    const k = Number(kcalGoal);
+    updateNutritionTargets({
+      ...(p > 0 && { dailyProteinTarget: p }),
+      ...(k > 0 && { dailyKcalTarget: k }),
+    });
+    setShowSettings(false);
+  };
+
   return (
-    <div className="gradient-mesh min-h-dvh">
+    <div className="gradient-mesh app-screen">
       <main className="page-container">
         <PageTransition>
-          <header className="mb-6 flex items-center justify-between">
-            <button type="button" className="glass flex h-10 w-10 items-center justify-center rounded-xl text-white/50">
+          <header className="mb-6 grid grid-cols-[44px_1fr_88px] items-center gap-2 px-1 pt-1">
+            <button
+              type="button"
+              onClick={openSettings}
+              className="glass flex h-10 w-10 items-center justify-center rounded-xl text-white/50"
+              aria-label="Nastavenia"
+            >
               <Settings size={18} />
             </button>
-            <div className="flex items-center gap-2">
-              <h1 className="text-lg font-bold text-white">Nutrition</h1>
+            <div className="flex items-center justify-center gap-2">
+              <h1 className="page-title mb-0 text-xl">Nutrition</h1>
               <span className="rounded-md bg-accent-green px-1.5 py-0.5 text-[10px] font-bold text-black">PRO</span>
             </div>
-            <div className="flex gap-2">
+            <div className="flex justify-end gap-2">
               <button type="button" className="glass flex h-10 w-10 items-center justify-center rounded-xl text-white/50">
                 <Flame size={18} />
               </button>
@@ -143,13 +196,38 @@ export default function NutritionPage() {
                 <MacroDots label="Sacharidy" color="#FF8C42" current={macros.carbs} target={macros.carbsTarget} />
                 <MacroDots label="Tuky" color="#00FF66" current={macros.fat} target={macros.fatTarget} />
               </div>
+              <button
+                type="button"
+                onClick={openSettings}
+                className="mt-4 w-full text-center text-xs text-accent-green underline"
+              >
+                Upraviť denné ciele
+              </button>
             </div>
           </section>
 
           <section className="mb-8">
-            <h2 className="mb-4 text-lg font-bold text-white">
+            <h2 className="section-title">
               Pridať jedlo {isToday ? '' : `– ${dateLabel}`}
             </h2>
+
+            <div className="mb-3 flex flex-wrap justify-center gap-1.5">
+              {MEAL_OPTIONS.map((m) => (
+                <button
+                  key={m.id}
+                  type="button"
+                  onClick={() => setMealType(m.id)}
+                  className={`touch-manipulation rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+                    mealType === m.id
+                      ? 'bg-accent-green text-black'
+                      : 'bg-bg-card text-text-muted'
+                  }`}
+                >
+                  {m.label}
+                </button>
+              ))}
+            </div>
+
             <div className="flex gap-2">
               <input
                 type="text"
@@ -159,10 +237,11 @@ export default function NutritionPage() {
                 className="glass-card flex-1 px-4 py-3 text-sm outline-none"
               />
               <input
-                type="number"
+                type="text"
+                inputMode="numeric"
                 placeholder="kcal"
                 value={foodKcal}
-                onChange={(e) => setFoodKcal(e.target.value)}
+                onChange={(e) => setFoodKcal(e.target.value.replace(/[^0-9]/g, ''))}
                 className="glass-card w-20 px-3 py-3 text-sm outline-none"
               />
             </div>
@@ -170,30 +249,84 @@ export default function NutritionPage() {
               + Pridať
             </GreenButton>
 
-            <div className="mt-4 space-y-2">
+            <div className="mt-6 space-y-5">
               {selectedLog.items.length === 0 ? (
                 <p className="py-6 text-center text-sm text-white/30">Žiadne jedlá v tento deň</p>
               ) : (
-                selectedLog.items.map((item) => (
-                  <div key={item.id} className="glass-card flex items-center justify-between p-4">
-                    <div>
-                      <p className="font-medium">{item.name}</p>
-                      <p className="text-sm text-white/40">{item.kcal} kcal</p>
+                MEAL_OPTIONS.map((meal) => {
+                  const items = itemsByMeal[meal.id];
+                  if (items.length === 0) return null;
+                  const mealKcal = items.reduce((s, i) => s + i.kcal, 0);
+                  return (
+                    <div key={meal.id}>
+                      <div className="mb-2 flex items-center justify-between px-1">
+                        <h3 className="text-sm font-semibold text-white/70">{meal.label}</h3>
+                        <span className="text-xs text-white/40">{mealKcal} kcal</span>
+                      </div>
+                      <div className="space-y-2">
+                        {items.map((item) => (
+                          <div key={item.id} className="glass-card flex items-center justify-between p-4">
+                            <div>
+                              <p className="font-medium">{item.name}</p>
+                              <p className="text-sm text-white/40">{item.kcal} kcal</p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => removeFood(selectedLog.date, item.id)}
+                              className="touch-manipulation rounded-lg p-2 text-white/40 hover:bg-white/5 hover:text-danger"
+                              aria-label="Vymazať"
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => removeFood(selectedLog.date, item.id)}
-                      className="touch-manipulation p-2 text-white/40"
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           </section>
         </PageTransition>
       </main>
+
+      {showSettings && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-5">
+          <div className="w-full max-w-sm rounded-card bg-bg-card p-6">
+            <div className="mb-5 flex items-center justify-between">
+              <h3 className="text-lg font-bold">Denné ciele</h3>
+              <button type="button" onClick={() => setShowSettings(false)} className="p-1 text-white/50">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="mb-1 block text-xs text-text-muted">Kalórie (kcal)</label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={kcalGoal}
+                  onChange={(e) => setKcalGoal(e.target.value.replace(/[^0-9]/g, ''))}
+                  className="w-full rounded-btn bg-bg-surface px-4 py-3 text-lg font-bold outline-none"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs text-text-muted">Bielkoviny (g)</label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={proteinGoal}
+                  onChange={(e) => setProteinGoal(e.target.value.replace(/[^0-9]/g, ''))}
+                  className="w-full rounded-btn bg-bg-surface px-4 py-3 text-lg font-bold text-accent-blue outline-none"
+                />
+              </div>
+            </div>
+            <GreenButton fullWidth pill onClick={saveSettings} className="mt-6">
+              Uložiť ciele
+            </GreenButton>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

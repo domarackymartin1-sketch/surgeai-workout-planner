@@ -54,6 +54,8 @@ interface AppState {
 
   addFood: (item: Omit<FoodItem, 'id'>, date?: string) => void;
   removeFood: (date: string, itemId: string) => void;
+  updateProfile: (updates: Partial<UserProfile>) => void;
+  updateNutritionTargets: (targets: { dailyKcalTarget?: number; dailyProteinTarget?: number }) => void;
   getTodayNutrition: () => NutritionLog;
   getNutritionForDate: (date: string) => NutritionLog;
 
@@ -293,6 +295,26 @@ export const useStore = create<AppState>()(
             .filter((l) => l.items.length > 0),
         })),
 
+      updateProfile: (updates) =>
+        set((state) => ({
+          profile: state.profile ? { ...state.profile, ...updates } : null,
+        })),
+
+      updateNutritionTargets: (targets) =>
+        set((state) => ({
+          profile: state.profile
+            ? {
+                ...state.profile,
+                ...(targets.dailyKcalTarget !== undefined && {
+                  dailyKcalTarget: targets.dailyKcalTarget,
+                }),
+                ...(targets.dailyProteinTarget !== undefined && {
+                  dailyProteinTarget: targets.dailyProteinTarget,
+                }),
+              }
+            : null,
+        })),
+
       getTodayNutrition: () => {
         const today = formatDateISO();
         return get().getNutritionForDate(today);
@@ -321,10 +343,31 @@ export const useStore = create<AppState>()(
 
       updateBodyStats: (heightCm, weightKg) =>
         set((state) => {
-          if (!state.profile) return state;
           const entry = { date: formatDateISO(), weight: weightKg };
-          const existing = state.profile.weight.filter((w) => w.date !== entry.date);
           const bmi = calculateBMI(weightKg, heightCm);
+
+          if (!state.profile) {
+            return {
+              profile: {
+                name: 'Užívateľ',
+                goal: 'maintain',
+                dailyKcalTarget: 2500,
+                dailyProteinTarget: 150,
+                experienceLevel: 'beginner',
+                workoutFrequency: '2-3',
+                categories: ['gym'],
+                heightCm,
+                weightKg,
+                bmi,
+                habits: [],
+                weight: [entry],
+                bodyMeasurements: [],
+                onboardingComplete: true,
+              },
+            };
+          }
+
+          const existing = state.profile.weight.filter((w) => w.date !== entry.date);
           return {
             profile: {
               ...state.profile,
@@ -398,8 +441,8 @@ export const useStore = create<AppState>()(
     }),
     {
       name: 'surgeai-store',
-      version: 3,
-      migrate: (persisted: unknown) => {
+      version: 4,
+      migrate: (persisted: unknown, version) => {
         const state = persisted as AppState;
         if (state?.profile && !('experienceLevel' in state.profile)) {
           state.profile = null;
@@ -407,6 +450,18 @@ export const useStore = create<AppState>()(
         if (state && state.nutritionWeekOffset === undefined) {
           state.nutritionWeekOffset = 0;
           state.nutritionSelectedDate = formatDateISO();
+        }
+        if (state?.profile && version < 4) {
+          if (state.profile.dailyProteinTarget === undefined) {
+            state.profile.dailyProteinTarget = Math.round(
+              ((state.profile.dailyKcalTarget ?? 2500) * 0.3) / 4
+            );
+          }
+          state.nutritionLogs?.forEach((log) => {
+            log.items.forEach((item) => {
+              if (!item.mealType) item.mealType = 'lunch';
+            });
+          });
         }
         return state;
       },

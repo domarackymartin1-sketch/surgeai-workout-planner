@@ -3,6 +3,7 @@ export type ExperienceLevel = 'beginner' | 'intermediate' | 'advanced';
 export type WorkoutFrequency = '2-3' | '4-5' | '6+';
 export type WorkoutCategory = 'hybrid' | 'gym' | 'cardio' | 'recovery' | 'hiit' | 'yoga';
 export type HabitId = 'water' | 'sleep' | 'stretching' | 'steps' | 'meditation' | 'protein';
+export type MealType = 'breakfast' | 'snack' | 'lunch' | 'afternoon' | 'dinner';
 
 export interface Exercise {
   id: string;
@@ -52,6 +53,7 @@ export interface FoodItem {
   protein?: number;
   carbs?: number;
   fat?: number;
+  mealType: MealType;
 }
 
 export interface NutritionLog {
@@ -77,6 +79,8 @@ export interface UserProfile {
   name: string;
   goal: UserGoal;
   dailyKcalTarget: number;
+  dailyProteinTarget?: number;
+  avatarUrl?: string;
   experienceLevel: ExperienceLevel;
   workoutFrequency: WorkoutFrequency;
   categories: WorkoutCategory[];

@@ -27,7 +27,7 @@ export default function HomePage() {
   }
 
   return (
-    <div className="gradient-mesh min-h-dvh min-h-svh">
+    <div className="gradient-mesh app-screen">
       <main className="page-container text-center">
         <PageTransition>
           <DashboardTopBar />

@@ -1,24 +1,34 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { calculateBMI, getBMICategory } from '@/lib/utils';
 import { useStore } from '@/lib/store';
 import GreenButton from '@/components/ui/GreenButton';
 import RingProgress from '@/components/ui/RingProgress';
 
 export default function BMICalculator({ standalone = false }: { standalone?: boolean }) {
+  const router = useRouter();
   const profile = useStore((s) => s.profile);
   const updateBodyStats = useStore((s) => s.updateBodyStats);
   const [height, setHeight] = useState(profile?.heightCm?.toString() ?? '');
   const [weight, setWeight] = useState(profile?.weightKg?.toString() ?? '');
+  const [saved, setSaved] = useState(false);
 
   const heightNum = Number(height);
   const weightNum = Number(weight);
-  const bmi = heightNum && weightNum ? calculateBMI(weightNum, heightNum) : 0;
+  const bmi = heightNum > 0 && weightNum > 0 ? calculateBMI(weightNum, heightNum) : 0;
   const cat = bmi > 0 ? getBMICategory(bmi) : null;
+  const canSave = heightNum > 0 && weightNum > 0;
 
   const handleSave = () => {
-    if (weightNum > 0 && heightNum > 0) updateBodyStats(heightNum, weightNum);
+    if (!canSave) return;
+    updateBodyStats(heightNum, weightNum);
+    setSaved(true);
+    setTimeout(() => {
+      if (standalone) router.back();
+      else setSaved(false);
+    }, 1200);
   };
 
   return (
@@ -34,9 +44,13 @@ export default function BMICalculator({ standalone = false }: { standalone?: boo
         <div className="glass-card p-4 text-left">
           <label className="text-xs text-white/40">Výška (cm)</label>
           <input
-            type="number"
+            type="text"
+            inputMode="numeric"
             value={height}
-            onChange={(e) => setHeight(e.target.value)}
+            onChange={(e) => {
+              setHeight(e.target.value.replace(/[^0-9]/g, ''));
+              setSaved(false);
+            }}
             placeholder="175"
             className="mt-1 w-full bg-transparent text-2xl font-bold text-white outline-none"
           />
@@ -44,9 +58,13 @@ export default function BMICalculator({ standalone = false }: { standalone?: boo
         <div className="glass-card p-4 text-left">
           <label className="text-xs text-white/40">Váha (kg)</label>
           <input
-            type="number"
+            type="text"
+            inputMode="decimal"
             value={weight}
-            onChange={(e) => setWeight(e.target.value)}
+            onChange={(e) => {
+              setWeight(e.target.value.replace(/[^0-9.,]/g, ''));
+              setSaved(false);
+            }}
             placeholder="75"
             className="mt-1 w-full bg-transparent text-2xl font-bold text-white outline-none"
           />
@@ -79,11 +97,9 @@ export default function BMICalculator({ standalone = false }: { standalone?: boo
         </div>
       )}
 
-      {profile && (
-        <GreenButton fullWidth pill onClick={handleSave} disabled={!weightNum || !heightNum}>
-          Uložiť váhu
-        </GreenButton>
-      )}
+      <GreenButton fullWidth pill onClick={handleSave} disabled={!canSave || saved}>
+        {saved ? 'Uložené ✓' : 'Uložiť váhu'}
+      </GreenButton>
     </div>
   );
 }

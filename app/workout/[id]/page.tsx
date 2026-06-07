@@ -89,17 +89,17 @@ export default function FocusModePage() {
 
   return (
     <motion.main
-      className="flex min-h-dvh flex-col bg-black px-4 pb-8 pt-6"
+      className="flex min-h-dvh flex-col bg-black px-5 pb-10 pt-8 safe-top"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
-      <div className="mb-2 flex items-center justify-between text-xs text-text-muted">
-        <span>{plan.name}</span>
+      <div className="mb-3 flex items-center justify-between px-1 text-xs text-text-muted">
+        <span className="max-w-[60%] truncate">{plan.name}</span>
         <span>{exerciseIndex + 1} / {plan.exercises.length}</span>
       </div>
 
-      <h1 className="mb-6 text-center font-display text-3xl font-bold">
+      <h1 className="page-title mb-6 text-3xl">
         {exercise?.name ?? 'Cvik'}
       </h1>
 
