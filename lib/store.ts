@@ -53,6 +53,7 @@ interface AppState {
   getTodayNutrition: () => NutritionLog;
 
   addWeight: (weight: number) => void;
+  updateBodyStats: (heightCm: number, weightKg: number) => void;
   addBodyMeasurement: (measurement: { chest?: number; waist?: number; hips?: number; biceps?: number }) => void;
 
   toggleHabit: (habitId: HabitId) => void;
@@ -296,6 +297,23 @@ export const useStore = create<AppState>()(
             profile: {
               ...state.profile,
               weightKg: weight,
+              bmi,
+              weight: [...existing, entry].sort((a, b) => a.date.localeCompare(b.date)),
+            },
+          };
+        }),
+
+      updateBodyStats: (heightCm, weightKg) =>
+        set((state) => {
+          if (!state.profile) return state;
+          const entry = { date: formatDateISO(), weight: weightKg };
+          const existing = state.profile.weight.filter((w) => w.date !== entry.date);
+          const bmi = calculateBMI(weightKg, heightCm);
+          return {
+            profile: {
+              ...state.profile,
+              heightCm,
+              weightKg,
               bmi,
               weight: [...existing, entry].sort((a, b) => a.date.localeCompare(b.date)),
             },

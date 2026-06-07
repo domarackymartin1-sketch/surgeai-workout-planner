@@ -24,23 +24,18 @@ export default function WeeklyOverview() {
   const stats = [
     { value: String(workoutsDone), label: 'Tréningov' },
     { value: `${hours}:${String(mins).padStart(2, '0')}`, label: 'Hodín' },
-    { value: String(tonsLifted || 0), label: 'Tonáž (100kg)' },
-    { value: String(Math.round(steps.distanceKm * 0.621)), label: 'Míľ' },
+    { value: String(tonsLifted || 0), label: 'Tonáž' },
+    { value: String(Math.round(steps.distanceKm)), label: 'Km' },
   ];
 
   return (
-    <section className="mb-6">
-      <h2 className="mb-3 font-display text-base font-bold text-white/90">
-        Týždenný prehľad 📈
-      </h2>
-      <div className="hide-scrollbar flex gap-3 overflow-x-auto pb-1">
+    <section className="mb-6 text-center">
+      <h2 className="mb-4 text-base font-bold text-white/90">Týždenný prehľad 📈</h2>
+      <div className="mx-auto grid max-w-sm grid-cols-2 gap-3">
         {stats.map((stat) => (
-          <div
-            key={stat.label}
-            className="glass-card flex min-w-[120px] flex-col items-center justify-center px-4 py-5"
-          >
-            <span className="font-display text-3xl font-bold text-white">{stat.value}</span>
-            <span className="mt-1 text-center text-[11px] text-white/40">{stat.label}</span>
+          <div key={stat.label} className="glass-card flex flex-col items-center justify-center px-4 py-5">
+            <span className="text-3xl font-bold text-white">{stat.value}</span>
+            <span className="mt-1 text-[11px] text-white/40">{stat.label}</span>
           </div>
         ))}
       </div>

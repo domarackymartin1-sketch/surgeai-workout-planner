@@ -1,18 +1,12 @@
 import type { Metadata, Viewport } from 'next';
-import { Barlow_Condensed, DM_Sans } from 'next/font/google';
+import { Inter } from 'next/font/google';
 import './globals.css';
 import BottomNav from '@/components/layout/BottomNav';
 
-const barlow = Barlow_Condensed({
+const inter = Inter({
   subsets: ['latin'],
-  weight: ['400', '600', '700'],
-  variable: '--font-barlow',
-});
-
-const dmSans = DM_Sans({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  variable: '--font-dm-sans',
+  weight: ['400', '500', '600', '700', '800'],
+  variable: '--font-inter',
 });
 
 export const metadata: Metadata = {
@@ -36,12 +30,12 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="sk" className={`${barlow.variable} ${dmSans.variable}`}>
+    <html lang="sk" className={inter.variable}>
       <head>
         <link rel="icon" href="/icon.svg" type="image/svg+xml" />
         <link rel="apple-touch-icon" href="/icon-192.png" />
       </head>
-      <body className="font-body antialiased overflow-x-hidden">
+      <body className="font-sans antialiased overflow-x-hidden">
         {children}
         <BottomNav />
       </body>

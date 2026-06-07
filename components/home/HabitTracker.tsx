@@ -26,12 +26,12 @@ export default function HabitTracker() {
   const doneCount = habits.filter((h) => completed.includes(h)).length;
 
   return (
-    <section className="mb-6">
-      <div className="mb-3 flex items-center justify-between">
-        <h2 className="font-display text-base font-bold text-white/90">Denné návyky</h2>
+    <section className="mb-6 text-center">
+      <div className="mb-3 flex items-center justify-center gap-2">
+        <h2 className="text-base font-bold text-white/90">Denné návyky</h2>
         <span className="text-xs text-accent-green">{doneCount}/{habits.length}</span>
       </div>
-      <div className="glass-card p-4">
+      <div className="glass-card mx-auto max-w-sm p-4">
         <div className="mb-3 h-1.5 overflow-hidden rounded-full bg-white/10">
           <div
             className="h-full rounded-full bg-accent-green transition-all duration-500"
@@ -46,7 +46,7 @@ export default function HabitTracker() {
                 key={habit}
                 type="button"
                 onClick={() => toggleHabit(habit)}
-                className={`touch-manipulation flex items-center gap-2.5 rounded-xl p-3 text-left transition-all ${
+                className={`touch-manipulation flex items-center gap-2 rounded-xl p-3 text-left transition-all ${
                   done ? 'glass-pill-active' : 'bg-white/5'
                 }`}
               >

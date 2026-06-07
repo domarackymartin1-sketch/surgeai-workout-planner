@@ -27,8 +27,9 @@ const config: Config = {
         btn: 'var(--radius-btn)',
       },
       fontFamily: {
-        display: ['var(--font-barlow)', 'sans-serif'],
-        body: ['var(--font-dm-sans)', 'sans-serif'],
+        sans: ['var(--font-inter)', '-apple-system', 'BlinkMacSystemFont', 'SF Pro Display', 'Segoe UI', 'sans-serif'],
+        display: ['var(--font-inter)', '-apple-system', 'BlinkMacSystemFont', 'SF Pro Display', 'sans-serif'],
+        body: ['var(--font-inter)', '-apple-system', 'BlinkMacSystemFont', 'SF Pro Text', 'sans-serif'],
       },
     },
   },

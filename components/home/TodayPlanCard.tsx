@@ -20,7 +20,7 @@ export default function TodayPlanCard() {
   };
 
   return (
-    <div className="glass-card relative overflow-hidden p-5">
+    <div className="glass-card relative overflow-hidden p-5 text-left">
       <div
         className="pointer-events-none absolute -right-12 -top-12 h-48 w-48 rounded-full"
         style={{ background: 'radial-gradient(circle, rgba(0,255,102,0.12), transparent 70%)' }}

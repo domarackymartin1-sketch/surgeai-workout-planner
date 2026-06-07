@@ -1,7 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
+import { ChevronRight } from 'lucide-react';
 import PageTransition from '@/components/layout/PageTransition';
+import FitnessScore from '@/components/analytics/FitnessScore';
 import WeightChart from '@/components/analytics/WeightChart';
 import PRTable from '@/components/analytics/PRTable';
 import VolumeChart from '@/components/analytics/VolumeChart';
@@ -34,71 +37,62 @@ export default function AnalyticsPage() {
 
   return (
     <div className="gradient-mesh min-h-dvh">
-    <main className="page-container">
-      <PageTransition>
-        <h1 className="mb-6 font-display text-2xl font-bold">Analytics</h1>
+      <main className="page-container">
+        <PageTransition>
+          <FitnessScore />
 
-        <section className="mb-8">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-display text-lg font-bold">Váha</h2>
-            <button
-              type="button"
-              onClick={() => setShowWeightForm(!showWeightForm)}
-              className="touch-manipulation text-sm text-accent-green"
-            >
-              + Zaznamenať váhu
-            </button>
-          </div>
-          {showWeightForm && (
-            <div className="mb-4 flex gap-2">
-              <input
-                type="number"
-                placeholder="kg"
-                value={weightInput}
-                onChange={(e) => setWeightInput(e.target.value)}
-                className="flex-1 rounded-btn bg-bg-card px-4 py-3 outline-none"
-              />
-              <GreenButton onClick={handleAddWeight}>Uložiť</GreenButton>
+          <Link
+            href="/bmi"
+            className="glass-card mb-8 flex items-center justify-between p-5 transition-opacity active:opacity-80"
+          >
+            <div className="text-left">
+              <p className="score-title text-sm font-bold text-accent-green">BMI Kalkulačka</p>
+              <p className="text-xs text-white/40">Výška, váha, zdravý rozsah</p>
             </div>
-          )}
-          <div className="card-surface p-4">
-            <WeightChart data={profile?.weight ?? []} />
-          </div>
-        </section>
+            <ChevronRight size={20} className="text-white/30" />
+          </Link>
 
-        <section className="mb-8">
-          <h2 className="mb-4 font-display text-lg font-bold">Osobné Rekordy (PR)</h2>
-          <PRTable prs={prs} />
-        </section>
-
-        <section className="mb-8">
-          <h2 className="mb-4 font-display text-lg font-bold">Tréningový objem</h2>
-          <div className="card-surface p-4">
-            <VolumeChart data={volumeData} />
-          </div>
-        </section>
-
-        <section>
-          <h2 className="mb-4 font-display text-lg font-bold">Telesné miery</h2>
-          <div className="card-surface p-4">
-            {profile?.bodyMeasurements && profile.bodyMeasurements.length > 0 ? (
-              profile.bodyMeasurements.map((m) => (
-                <div key={m.date} className="mb-2 text-sm text-text-muted">
-                  {new Date(m.date).toLocaleDateString('sk-SK')}:{' '}
-                  {m.chest && `Hrudník ${m.chest}cm `}
-                  {m.waist && `Pas ${m.waist}cm `}
-                  {m.biceps && `Biceps ${m.biceps}cm`}
-                </div>
-              ))
-            ) : (
-              <p className="py-4 text-center text-sm text-text-muted">
-                Zaznamenávaj miery v budúcej verzii
-              </p>
+          <section className="mb-8">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-lg font-bold text-white">Váha</h2>
+              <button
+                type="button"
+                onClick={() => setShowWeightForm(!showWeightForm)}
+                className="touch-manipulation text-sm text-accent-green"
+              >
+                + Zaznamenať
+              </button>
+            </div>
+            {showWeightForm && (
+              <div className="mb-4 flex gap-2">
+                <input
+                  type="number"
+                  placeholder="kg"
+                  value={weightInput}
+                  onChange={(e) => setWeightInput(e.target.value)}
+                  className="glass-card flex-1 px-4 py-3 outline-none"
+                />
+                <GreenButton onClick={handleAddWeight}>Uložiť</GreenButton>
+              </div>
             )}
-          </div>
-        </section>
-      </PageTransition>
-    </main>
+            <div className="glass-card p-4">
+              <WeightChart data={profile?.weight ?? []} />
+            </div>
+          </section>
+
+          <section className="mb-8">
+            <h2 className="mb-4 text-lg font-bold text-white">Osobné Rekordy</h2>
+            <PRTable prs={prs} />
+          </section>
+
+          <section className="mb-8">
+            <h2 className="mb-4 text-lg font-bold text-white">Tréningový objem</h2>
+            <div className="glass-card p-4">
+              <VolumeChart data={volumeData} />
+            </div>
+          </section>
+        </PageTransition>
+      </main>
     </div>
   );
 }

@@ -54,14 +54,22 @@ html.onboarding-lock body {
 body {
   background-color: var(--bg-primary);
   color: var(--text-primary);
-  font-family: var(--font-dm-sans), sans-serif;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
   overflow-x: hidden;
   min-height: 100dvh;
   min-height: 100svh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 h1, h2, h3, h4 {
-  font-family: var(--font-barlow), sans-serif;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  letter-spacing: -0.02em;
+}
+
+.score-title {
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  letter-spacing: -0.01em;
 }
 
 @layer utilities {
