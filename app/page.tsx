@@ -6,7 +6,6 @@ import DashboardTopBar from '@/components/home/DashboardTopBar';
 import WeekCalendar from '@/components/home/WeekCalendar';
 import WorkoutWeekPlan from '@/components/home/WorkoutWeekPlan';
 import WeeklyOverview from '@/components/home/WeeklyOverview';
-import HabitTracker from '@/components/home/HabitTracker';
 import TodayPlanCard from '@/components/home/TodayPlanCard';
 import Onboarding from '@/components/onboarding/Onboarding';
 import { useStore } from '@/lib/store';
@@ -35,7 +34,6 @@ export default function HomePage() {
           <WeekCalendar />
           <WorkoutWeekPlan />
           <WeeklyOverview />
-          <HabitTracker />
 
           <section className="mb-6">
             <h2 className="mb-3 text-base font-bold text-white/90">Dnešný tréning</h2>

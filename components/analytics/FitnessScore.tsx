@@ -7,9 +7,9 @@ function RadarChart({ metrics, labels }: {
   metrics: ReturnType<typeof calculateFitnessScore>['metrics'];
   labels: ReturnType<typeof calculateFitnessScore>['labels'];
 }) {
-  const size = 260;
+  const size = 280;
   const center = size / 2;
-  const maxR = 100;
+  const maxR = 95;
   const levels = 5;
   const keys = labels.map((l) => l.key);
   const angleStep = (2 * Math.PI) / keys.length;
@@ -17,17 +17,23 @@ function RadarChart({ metrics, labels }: {
   const getPoint = (index: number, value: number) => {
     const angle = angleStep * index - Math.PI / 2;
     const r = (value / 10) * maxR;
-    return {
-      x: center + r * Math.cos(angle),
-      y: center + r * Math.sin(angle),
-    };
+    return { x: center + r * Math.cos(angle), y: center + r * Math.sin(angle) };
   };
 
   const dataPoints = keys.map((key, i) => getPoint(i, metrics[key]));
   const dataPath = dataPoints.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ') + ' Z';
 
+  const labelKeys: Record<string, string> = {
+    consistency: 'Consistency',
+    endurance: 'Endurance',
+    strength: 'Strength',
+    habits: 'Habits',
+    progress: 'Progress',
+    volume: 'Volume',
+  };
+
   return (
-    <svg viewBox={`0 0 ${size} ${size}`} className="mx-auto w-full max-w-[280px]">
+    <svg viewBox={`0 0 ${size} ${size}`} className="mx-auto w-full max-w-[300px]">
       {Array.from({ length: levels }, (_, lvl) => {
         const r = ((lvl + 1) / levels) * maxR;
         const pts = keys.map((_, i) => {
@@ -39,9 +45,9 @@ function RadarChart({ metrics, labels }: {
             key={lvl}
             points={pts.join(' ')}
             fill="none"
-            stroke="rgba(255,255,255,0.08)"
+            stroke="rgba(255,255,255,0.1)"
             strokeWidth="1"
-            strokeDasharray="3 3"
+            strokeDasharray="4 4"
           />
         );
       })}
@@ -49,39 +55,21 @@ function RadarChart({ metrics, labels }: {
       {keys.map((_, i) => {
         const outer = getPoint(i, 10);
         return (
-          <line
-            key={i}
-            x1={center}
-            y1={center}
-            x2={outer.x}
-            y2={outer.y}
-            stroke="rgba(255,255,255,0.08)"
-            strokeWidth="1"
-          />
+          <line key={i} x1={center} y1={center} x2={outer.x} y2={outer.y} stroke="rgba(255,255,255,0.08)" strokeWidth="1" />
         );
       })}
 
-      <path d={dataPath} fill="rgba(0,255,102,0.2)" stroke="var(--accent-green)" strokeWidth="2" />
+      <path d={dataPath} fill="rgba(0,255,102,0.25)" stroke="var(--accent-green)" strokeWidth="2.5" />
 
       {keys.map((key, i) => {
-        const labelPos = getPoint(i, 12.5);
+        const labelPos = getPoint(i, 11.8);
         const val = metrics[key];
         return (
           <g key={key}>
-            <text
-              x={labelPos.x}
-              y={labelPos.y - 6}
-              textAnchor="middle"
-              className="fill-white/50 text-[9px] font-medium"
-            >
-              {labels[i].label}
+            <text x={labelPos.x} y={labelPos.y - 5} textAnchor="middle" className="fill-white/45 text-[8px] font-medium">
+              {labelKeys[key] ?? labels[i].label}
             </text>
-            <text
-              x={labelPos.x}
-              y={labelPos.y + 6}
-              textAnchor="middle"
-              className="fill-white text-[10px] font-semibold"
-            >
+            <text x={labelPos.x} y={labelPos.y + 7} textAnchor="middle" className="fill-white text-[10px] font-bold">
               {val}/10
             </text>
           </g>
@@ -91,7 +79,7 @@ function RadarChart({ metrics, labels }: {
   );
 }
 
-export default function FitnessScore() {
+export default function FitnessScore({ compact = false }: { compact?: boolean }) {
   const workoutLogs = useStore((s) => s.workoutLogs);
   const habitLogs = useStore((s) => s.habitLogs);
   const prs = useStore((s) => s.prs);
@@ -105,16 +93,12 @@ export default function FitnessScore() {
   );
 
   return (
-    <section className="mb-8 text-center">
-      <h2 className="score-title mb-1 text-xl font-bold text-accent-green">Fitness Score</h2>
-      <p className="mb-6 font-display text-5xl font-bold tracking-tight text-white">
+    <div className="text-center">
+      <p className="score-title mb-1 text-base font-bold text-accent-green">Fitness Score</p>
+      <p className={`mb-4 font-bold tracking-tight text-white ${compact ? 'text-4xl' : 'text-5xl'}`}>
         {totalScore}
       </p>
-      <div className="glass-card mx-auto max-w-sm p-5">
-        <RadarChart metrics={metrics} labels={labels} />
-      </div>
-      <h3 className="mt-8 text-left text-2xl font-bold text-white">Tvoje dáta</h3>
-      <div className="mt-3 h-px bg-white/10" />
-    </section>
+      <RadarChart metrics={metrics} labels={labels} />
+    </div>
   );
 }

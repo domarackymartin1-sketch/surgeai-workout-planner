@@ -7,6 +7,7 @@ import NutritionWeekStrip from '@/components/nutrition/NutritionWeekStrip';
 import MacroDots from '@/components/nutrition/MacroDots';
 import GreenButton from '@/components/ui/GreenButton';
 import { useStore } from '@/lib/store';
+import { formatDateISO } from '@/lib/utils';
 
 function CalorieArc({ consumed, goal }: { consumed: number; goal: number }) {
   const size = 220;
@@ -25,21 +26,14 @@ function CalorieArc({ consumed, goal }: { consumed: number; goal: number }) {
           <span className="block text-2xl font-bold text-white">{remaining}</span>
           <span className="text-xs text-white/40">Zostáva</span>
         </p>
-
         <div className="relative">
           <div className="absolute inset-0 m-auto h-40 w-40 rounded-full bg-accent-green/20 blur-3xl" />
           <svg width={size} height={size} className="-rotate-90">
             <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(0,255,102,0.15)" strokeWidth={stroke} />
             <circle
-              cx={size / 2}
-              cy={size / 2}
-              r={r}
-              fill="none"
-              stroke="url(#calGrad)"
-              strokeWidth={stroke}
-              strokeLinecap="round"
-              strokeDasharray={circ}
-              strokeDashoffset={offset}
+              cx={size / 2} cy={size / 2} r={r} fill="none"
+              stroke="url(#calGrad)" strokeWidth={stroke} strokeLinecap="round"
+              strokeDasharray={circ} strokeDashoffset={offset}
               className="transition-all duration-1000"
             />
             <defs>
@@ -54,7 +48,6 @@ function CalorieArc({ consumed, goal }: { consumed: number; goal: number }) {
             <span className="text-sm text-white/50">Kcal</span>
           </div>
         </div>
-
         <p className="absolute right-0 text-center">
           <span className="block text-2xl font-bold text-white">{goal}</span>
           <span className="text-xs text-white/40">Cieľ</span>
@@ -66,24 +59,35 @@ function CalorieArc({ consumed, goal }: { consumed: number; goal: number }) {
 
 export default function NutritionPage() {
   const profile = useStore((s) => s.profile);
-  const getTodayNutrition = useStore((s) => s.getTodayNutrition);
+  const nutritionSelectedDate = useStore((s) => s.nutritionSelectedDate);
+  const getNutritionForDate = useStore((s) => s.getNutritionForDate);
   const addFood = useStore((s) => s.addFood);
   const removeFood = useStore((s) => s.removeFood);
   const [foodName, setFoodName] = useState('');
   const [foodKcal, setFoodKcal] = useState('');
 
-  const today = getTodayNutrition();
+  const selectedLog = getNutritionForDate(nutritionSelectedDate);
   const goal = profile?.dailyKcalTarget ?? 2500;
+  const today = formatDateISO();
+  const isToday = nutritionSelectedDate === today;
+
+  const dateLabel = isToday
+    ? 'Dnes'
+    : new Date(nutritionSelectedDate).toLocaleDateString('sk-SK', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+      });
 
   const macros = useMemo(() => {
-    const protein = today.items.reduce((s, i) => s + (i.protein ?? i.kcal * 0.3 / 4), 0);
-    const carbs = today.items.reduce((s, i) => s + (i.carbs ?? i.kcal * 0.45 / 4), 0);
-    const fat = today.items.reduce((s, i) => s + (i.fat ?? i.kcal * 0.25 / 9), 0);
+    const protein = selectedLog.items.reduce((s, i) => s + (i.protein ?? i.kcal * 0.3 / 4), 0);
+    const carbs = selectedLog.items.reduce((s, i) => s + (i.carbs ?? i.kcal * 0.45 / 4), 0);
+    const fat = selectedLog.items.reduce((s, i) => s + (i.fat ?? i.kcal * 0.25 / 9), 0);
     const proteinTarget = Math.round((goal * 0.3) / 4);
     const carbsTarget = Math.round((goal * 0.45) / 4);
     const fatTarget = Math.round((goal * 0.25) / 9);
     return { protein, carbs, fat, proteinTarget, carbsTarget, fatTarget };
-  }, [today.items, goal]);
+  }, [selectedLog.items, goal]);
 
   const handleAdd = () => {
     if (!foodName.trim() || !foodKcal) return;
@@ -94,7 +98,7 @@ export default function NutritionPage() {
       protein: Math.round((kcal * 0.3) / 4),
       carbs: Math.round((kcal * 0.45) / 4),
       fat: Math.round((kcal * 0.25) / 9),
-    });
+    }, nutritionSelectedDate);
     setFoodName('');
     setFoodKcal('');
   };
@@ -122,7 +126,15 @@ export default function NutritionPage() {
           </header>
 
           <NutritionWeekStrip />
-          <CalorieArc consumed={today.totalKcal} goal={goal} />
+          <p className="mb-4 text-center text-sm text-white/50">
+            {isToday ? (
+              <span className="font-semibold text-accent-green">● Dnes</span>
+            ) : (
+              <span className="capitalize">{dateLabel}</span>
+            )}
+          </p>
+
+          <CalorieArc consumed={selectedLog.totalKcal} goal={goal} />
 
           <section className="mb-8">
             <div className="glass-card mx-auto max-w-sm p-5">
@@ -135,7 +147,9 @@ export default function NutritionPage() {
           </section>
 
           <section className="mb-8">
-            <h2 className="mb-4 text-lg font-bold text-white">Pridať jedlo</h2>
+            <h2 className="mb-4 text-lg font-bold text-white">
+              Pridať jedlo {isToday ? '' : `– ${dateLabel}`}
+            </h2>
             <div className="flex gap-2">
               <input
                 type="text"
@@ -157,21 +171,25 @@ export default function NutritionPage() {
             </GreenButton>
 
             <div className="mt-4 space-y-2">
-              {today.items.map((item) => (
-                <div key={item.id} className="glass-card flex items-center justify-between p-4">
-                  <div>
-                    <p className="font-medium">{item.name}</p>
-                    <p className="text-sm text-white/40">{item.kcal} kcal</p>
+              {selectedLog.items.length === 0 ? (
+                <p className="py-6 text-center text-sm text-white/30">Žiadne jedlá v tento deň</p>
+              ) : (
+                selectedLog.items.map((item) => (
+                  <div key={item.id} className="glass-card flex items-center justify-between p-4">
+                    <div>
+                      <p className="font-medium">{item.name}</p>
+                      <p className="text-sm text-white/40">{item.kcal} kcal</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeFood(selectedLog.date, item.id)}
+                      className="touch-manipulation p-2 text-white/40"
+                    >
+                      <Trash2 size={18} />
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => removeFood(today.date, item.id)}
-                    className="touch-manipulation p-2 text-white/40"
-                  >
-                    <Trash2 size={18} />
-                  </button>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </section>
         </PageTransition>

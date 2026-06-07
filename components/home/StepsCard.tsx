@@ -17,7 +17,7 @@ export default function StepsCard() {
   return (
     <button
       type="button"
-      onClick={() => router.push('/analytics')}
+      onClick={() => router.push('/profile')}
       className="touch-manipulation glass-card mb-4 w-full p-5 text-left transition-transform active:scale-[0.99]"
     >
       <div className="mb-4 flex items-center justify-between">

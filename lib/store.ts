@@ -32,11 +32,15 @@ interface AppState {
   weeklySchedule: WeeklyDayPlan[];
   activeWorkout: ActiveWorkout | null;
   weekOffset: number;
+  nutritionWeekOffset: number;
+  nutritionSelectedDate: string;
 
   saveOnboarding: (data: OnboardingData) => void;
   completeOnboarding: () => void;
   resetOnboarding: () => void;
   setWeekOffset: (offset: number) => void;
+  setNutritionWeekOffset: (offset: number) => void;
+  setNutritionSelectedDate: (date: string) => void;
 
   addPlan: (plan: Omit<WorkoutPlan, 'id'>) => void;
   updatePlan: (id: string, plan: Partial<WorkoutPlan>) => void;
@@ -48,16 +52,19 @@ interface AppState {
   finishWorkout: (mood?: string) => void;
   cancelWorkout: () => void;
 
-  addFood: (item: Omit<FoodItem, 'id'>) => void;
+  addFood: (item: Omit<FoodItem, 'id'>, date?: string) => void;
   removeFood: (date: string, itemId: string) => void;
   getTodayNutrition: () => NutritionLog;
+  getNutritionForDate: (date: string) => NutritionLog;
 
   addWeight: (weight: number) => void;
   updateBodyStats: (heightCm: number, weightKg: number) => void;
   addBodyMeasurement: (measurement: { chest?: number; waist?: number; hips?: number; biceps?: number }) => void;
 
   toggleHabit: (habitId: HabitId) => void;
+  toggleHabitForDate: (habitId: HabitId, date: string) => void;
   getTodayHabits: () => HabitId[];
+  getHabitsForDate: (date: string) => HabitId[];
 
   getTodaySteps: () => StepsData;
   getStepsForWeek: () => StepsData[];
@@ -102,6 +109,8 @@ export const useStore = create<AppState>()(
       weeklySchedule: buildWeeklySchedule(['gym', 'cardio', 'hybrid']),
       activeWorkout: null,
       weekOffset: 0,
+      nutritionWeekOffset: 0,
+      nutritionSelectedDate: formatDateISO(),
 
       saveOnboarding: (data) => {
         const bmi = calculateBMI(data.weightKg, data.heightCm);
@@ -134,7 +143,10 @@ export const useStore = create<AppState>()(
 
       resetOnboarding: () => set({ profile: null }),
 
-      setWeekOffset: (offset) => set({ weekOffset: offset }),
+      setWeekOffset: (offset) => set({ weekOffset: Math.max(0, offset) }),
+      setNutritionWeekOffset: (offset) =>
+        set({ nutritionWeekOffset: Math.max(-8, Math.min(52, offset)) }),
+      setNutritionSelectedDate: (date) => set({ nutritionSelectedDate: date }),
 
       addPlan: (plan) =>
         set((state) => ({
@@ -246,16 +258,16 @@ export const useStore = create<AppState>()(
 
       cancelWorkout: () => set({ activeWorkout: null }),
 
-      addFood: (item) => {
-        const today = formatDateISO();
+      addFood: (item, date) => {
+        const targetDate = date ?? formatDateISO();
         set((state) => {
-          const existing = state.nutritionLogs.find((l) => l.date === today);
+          const existing = state.nutritionLogs.find((l) => l.date === targetDate);
           const foodItem: FoodItem = { ...item, id: generateId() };
           if (existing) {
             const items = [...existing.items, foodItem];
             return {
               nutritionLogs: state.nutritionLogs.map((l) =>
-                l.date === today
+                l.date === targetDate
                   ? { ...l, items, totalKcal: items.reduce((s, i) => s + i.kcal, 0) }
                   : l
               ),
@@ -264,7 +276,7 @@ export const useStore = create<AppState>()(
           return {
             nutritionLogs: [
               ...state.nutritionLogs,
-              { date: today, items: [foodItem], totalKcal: foodItem.kcal },
+              { date: targetDate, items: [foodItem], totalKcal: foodItem.kcal },
             ],
           };
         });
@@ -283,8 +295,12 @@ export const useStore = create<AppState>()(
 
       getTodayNutrition: () => {
         const today = formatDateISO();
-        const log = get().nutritionLogs.find((l) => l.date === today);
-        return log ?? { date: today, items: [], totalKcal: 0 };
+        return get().getNutritionForDate(today);
+      },
+
+      getNutritionForDate: (date) => {
+        const log = get().nutritionLogs.find((l) => l.date === date);
+        return log ?? { date, items: [], totalKcal: 0 };
       },
 
       addWeight: (weight) =>
@@ -334,29 +350,32 @@ export const useStore = create<AppState>()(
         }),
 
       toggleHabit: (habitId) => {
-        const today = formatDateISO();
+        get().toggleHabitForDate(habitId, formatDateISO());
+      },
+
+      toggleHabitForDate: (habitId, date) => {
         set((state) => {
-          const existing = state.habitLogs.find((l) => l.date === today);
+          const existing = state.habitLogs.find((l) => l.date === date);
           if (existing) {
             const completed = existing.completed.includes(habitId)
               ? existing.completed.filter((h) => h !== habitId)
               : [...existing.completed, habitId];
             return {
               habitLogs: state.habitLogs.map((l) =>
-                l.date === today ? { ...l, completed } : l
+                l.date === date ? { ...l, completed } : l
               ),
             };
           }
           return {
-            habitLogs: [...state.habitLogs, { date: today, completed: [habitId] }],
+            habitLogs: [...state.habitLogs, { date, completed: [habitId] }],
           };
         });
       },
 
-      getTodayHabits: () => {
-        const today = formatDateISO();
-        return get().habitLogs.find((l) => l.date === today)?.completed ?? [];
-      },
+      getTodayHabits: () => get().getHabitsForDate(formatDateISO()),
+
+      getHabitsForDate: (date) =>
+        get().habitLogs.find((l) => l.date === date)?.completed ?? [],
 
       getTodaySteps: () => {
         const today = formatDateISO();
@@ -379,11 +398,15 @@ export const useStore = create<AppState>()(
     }),
     {
       name: 'surgeai-store',
-      version: 2,
+      version: 3,
       migrate: (persisted: unknown) => {
         const state = persisted as AppState;
         if (state?.profile && !('experienceLevel' in state.profile)) {
           state.profile = null;
+        }
+        if (state && state.nutritionWeekOffset === undefined) {
+          state.nutritionWeekOffset = 0;
+          state.nutritionSelectedDate = formatDateISO();
         }
         return state;
       },
